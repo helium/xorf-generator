@@ -10,7 +10,7 @@ use std::{
     fs::File,
     hash::Hasher,
     io::{Read, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 use structopt::StructOpt;
 use twox_hash::XxHash64;
@@ -139,7 +139,7 @@ fn public_key_hash(public_key: &PublicKey) -> u64 {
     hasher.finish()
 }
 
-fn read_keypair(path: &PathBuf) -> Result<Keypair> {
+fn read_keypair(path: &Path) -> Result<Keypair> {
     let mut file = File::open(path)?;
     let mut data = Vec::new();
     file.read_to_end(&mut data)?;
@@ -147,7 +147,7 @@ fn read_keypair(path: &PathBuf) -> Result<Keypair> {
     Ok(keypair)
 }
 
-fn read_filter(path: &PathBuf) -> Result<Filter> {
+fn read_filter(path: &Path) -> Result<Filter> {
     let mut file = File::open(path)?;
     let mut data = Vec::new();
     file.read_to_end(&mut data)?;
