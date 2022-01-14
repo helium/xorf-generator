@@ -58,7 +58,7 @@ build infrastructure producing the denylist filter.
    As utilities, to verify the signature of a given filter:
 
    ```shell
-   $ xorf-generator filter verify -i filter.bin --key 142Q94DY68iJ95PzE56peh7PKtGJNfc6WM537tgtyfi3Z4o3kzX`
+   $ xorf-generator filter verify -i filter.bin --key 142Q94DY68iJ95PzE56peh7PKtGJNfc6WM537tgtyfi3Z4o3kzX
    {
      "address": "142Q94DY68iJ95PzE56peh7PKtGJNfc6WM537tgtyfi3Z4o3kzX",
      "verify": true
@@ -68,7 +68,7 @@ build infrastructure producing the denylist filter.
    and to check if a given public key is in a filter:
 
    ```shell
-   $ xorf-generator filter contains -i filter.bin --key 1112C1wiK9JDiEiuw79S6skHgtSDiYcvkRSWqfmJj1ncuDUgoLc`
+   $ xorf-generator filter contains -i filter.bin --key 1112C1wiK9JDiEiuw79S6skHgtSDiYcvkRSWqfmJj1ncuDUgoLc
    {
      "address": "1112C1wiK9JDiEiuw79S6skHgtSDiYcvkRSWqfmJj1ncuDUgoLc",
      "in_filter": true
