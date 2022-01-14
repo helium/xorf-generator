@@ -1,0 +1,22 @@
+[package]
+name = "xorf-generator"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "xorf-generator"
+path = "src/main.rs"
+doc = false
+
+[dependencies]
+anyhow = "1"
+bytes = "*"
+structopt = "0"
+bincode = "1"
+csv = "1"
+twox-hash = "1"
+xorf = {version = "0", features = ["serde"] }
+serde = {version = "1", features = ["derive"]}
+serde_json = "1"
+rand = "0.8"
+helium-crypto = {git = "https://github.com/helium/helium-crypto-rs", tag="v0.3.2"}
