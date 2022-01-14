@@ -8,10 +8,13 @@
 
 ## xorf-generator
 
-This applications is used to construct a binary filter that is used to manage
-the denylists in Helium hotspots. Given a list of public keys in a csv file, it
-constructs an 32 bit binary fuse filter, signs and verions it and produces a
-binary file that can be processed by the deny list code in Helium miners.
+This application is used to construct a binary filter that can be used to manage 
+lists of Base58 encoded public keys (like Hotspot addresses or Account public 
+keys). It was initially created to manage denylists in Helium Hotspots. 
+
+Given a list of public keys in a csv file, it constructs an 32 bit binary fuse 
+filter,  signs and verions it, and produces a binary file that can be processed 
+by Helium Hotspots.
 
 The signing key that is used to verify the filter, has its public key included
 in miner firmware builds, while its private key is managed and protected by the
