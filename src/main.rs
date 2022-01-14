@@ -10,7 +10,7 @@ pub struct Cli {
 
 #[derive(Debug, StructOpt)]
 pub enum Cmd {
-    Filter(cmd::filter::Cmd),
+    Filter(Box<cmd::filter::Cmd>),
     Keypair(cmd::keypair::Cmd),
 }
 

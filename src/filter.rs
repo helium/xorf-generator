@@ -26,7 +26,7 @@ impl Filter {
     }
 
     pub fn contains(&self, hash: &u64) -> bool {
-        self.filter.contains(&hash)
+        self.filter.contains(hash)
     }
 
     pub fn verify(&self, public_key: &PublicKey) -> Result {
