@@ -1,7 +1,7 @@
 [![Build Status][actions-badge]][actions-url]
 [![Discord chat][discord-badge]][discord-url]
 
-[actions-badge]: https://github.com/helium/xorf-generator/actions/workflows/rust.yml/badge.svg
+[actions-badge]: https://github.com/helium/xorf-generator/actions/workflows/rust.yml/badge.svg?branch=main
 [actions-url]: https://github.com/helium/xorf-generator/actions/workflows/rust.yml
 [discord-badge]: https://img.shields.io/discord/500028886025895936.svg?logo=discord&style=flat-square
 [discord-url]: https://discord.gg/helium
