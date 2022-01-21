@@ -60,12 +60,8 @@ pub struct Verify {
 impl Verify {
     pub fn run(&self) -> Result {
         let filter = Filter::from_path(&self.input)?;
-        filter.verify(&self.key)?;
-        let json = json!({
-            "address":  self.key.to_string(),
-            "verify": true,
-        });
-        print_json(&json)
+        let verified = filter.verify(&self.key).is_ok();
+        print_verified(&self.key, verified)
     }
 }
 
@@ -101,11 +97,23 @@ impl Generate {
     pub fn run(&self) -> Result {
         let manifest = Manifest::from_csv(&self.manifest)?;
         let key_manifest = PublicKeyManifest::from_csv(&self.key)?;
+        let key = key_manifest.public_key()?;
+
         let mut filter = Filter::from_csv(self.serial, &self.input)?;
         filter.signature = manifest.sign(&key_manifest)?;
         let filter_bytes = filter.to_bytes()?;
         let mut file = open_output_file(&self.output, false)?;
         file.write_all(&filter_bytes)?;
-        Ok(())
+
+        let verified = filter.verify(&key).is_ok();
+        print_verified(&key, verified)
     }
+}
+
+fn print_verified(public_key: &PublicKey, verified: bool) -> Result {
+    let json = json!({
+        "address":  public_key.to_string(),
+        "verified": verified,
+    });
+    print_json(&json)
 }

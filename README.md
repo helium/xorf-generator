@@ -97,9 +97,15 @@ Once the required numebr of signatures is collected, the final filter can be gen
 
 ```shell
 $ filter generate -i /tmp/suspicious.csv -s 1
+{
+  "address": "1SVRdbb7Xe1ijHYwGMVx55wnmRRzwhb3jRkw5fAGr3zoaiqAq9tcLKKH",
+  "verified": true
+}
 ```
 
 which will take the (implied) `public key.json` and (implied) `manifest.json`, and generate the filter with the given signature.
+
+The command prints out the multisig public key and whether it was able to successfully verify the signature included in the filter.
 
 ### Verify a filter
 
