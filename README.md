@@ -50,7 +50,7 @@ required:
 
 To get info for a given multisig key:
 
-````shell
+```shell
 $ xorf-generator keypair info
 {
   "address": "1SVRdbb7Xe1ijHYwGMVx55wnmRRzwhb3jRkw5fAGr3zoaiqAq9tcLKKH",
@@ -65,7 +65,7 @@ Generate a manifest and signing data for a given csv file of public keys
 
 ```shell
 $ xorf-generator manifest generate -i hotspots.csv --serial 1 -f
-````
+```
 
 where the `hotspots.csv` is the list of public keys to include in the filter,
 and the serial option the serial number for the signing data. This will
