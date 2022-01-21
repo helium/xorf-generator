@@ -79,11 +79,8 @@ impl Filter {
         let mut buf = data.as_ref();
         let version = buf.get_u8();
         let signature_len = buf.get_u16_le() as usize;
-        println!("SIG LEN {}", signature_len);
         let signature = buf.copy_to_bytes(signature_len).to_vec();
-        println!("SIG READ {}", signature.len());
         let serial = buf.get_u32_le();
-        println!("SERIAL {}", serial);
         let filter = bincode::deserialize(buf)?;
         Ok(Self {
             version,
