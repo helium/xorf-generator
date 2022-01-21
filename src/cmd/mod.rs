@@ -1,8 +1,8 @@
 use std::{fs, io, path::Path};
 
 pub mod filter;
+pub mod key;
 pub mod manifest;
-pub mod public_key;
 
 pub fn print_json<T: ?Sized + serde::Serialize>(value: &T) -> crate::Result {
     println!("{}", serde_json::to_string_pretty(value)?);

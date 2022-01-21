@@ -29,10 +29,9 @@ impl Cmd {
 #[derive(StructOpt, Debug)]
 pub struct Contains {
     /// The input file to generate a filter for
-    #[structopt(long, short)]
+    #[structopt(long, short, default_value = "filter.bin")]
     input: PathBuf,
     /// The public key to check
-    #[structopt(long)]
     key: PublicKey,
 }
 

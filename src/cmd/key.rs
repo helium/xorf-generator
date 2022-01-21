@@ -21,6 +21,7 @@ impl Cmd {
 #[derive(StructOpt, Debug)]
 pub struct Info {
     /// File to read public key from
+    #[structopt(default_value = "public_key.json")]
     input: PathBuf,
 }
 
