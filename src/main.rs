@@ -11,7 +11,8 @@ pub struct Cli {
 #[derive(Debug, StructOpt)]
 pub enum Cmd {
     Filter(Box<cmd::filter::Cmd>),
-    Keypair(cmd::keypair::Cmd),
+    PublicKey(cmd::public_key::Cmd),
+    Manifest(cmd::manifest::Cmd),
 }
 
 fn main() -> Result {
@@ -22,6 +23,7 @@ fn main() -> Result {
 fn run(cli: Cli) -> Result {
     match cli.cmd {
         Cmd::Filter(cmd) => cmd.run(),
-        Cmd::Keypair(cmd) => cmd.run(),
+        Cmd::PublicKey(cmd) => cmd.run(),
+        Cmd::Manifest(cmd) => cmd.run(),
     }
 }
