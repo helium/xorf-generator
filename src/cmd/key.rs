@@ -27,7 +27,7 @@ pub struct Info {
 
 impl Info {
     pub fn run(&self) -> Result {
-        let manifest = PublicKeyManifest::from_csv(&self.input)?;
+        let manifest = PublicKeyManifest::from_path(&self.input)?;
         print_manifest(&manifest)
     }
 }

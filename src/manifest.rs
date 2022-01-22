@@ -5,11 +5,13 @@ use std::{fs::File, io::BufReader, ops::Deref, path::Path};
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Manifest {
+    pub(crate) serial: u32,
+    pub(crate) hash: String,
     pub(crate) signatures: Vec<ManifestSignature>,
 }
 
 impl Manifest {
-    pub fn from_csv<P: AsRef<Path>>(path: P) -> Result<Self> {
+    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
         let file = File::open(path)?;
         let manifest = serde_json::from_reader(BufReader::new(file))?;
         Ok(manifest)
@@ -38,7 +40,7 @@ pub struct PublicKeyManifest {
 }
 
 impl PublicKeyManifest {
-    pub fn from_csv<P: AsRef<Path>>(path: P) -> Result<Self> {
+    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
         let file = File::open(path)?;
         let manifest = serde_json::from_reader(BufReader::new(file))?;
         Ok(manifest)
@@ -64,7 +66,7 @@ impl PublicKeyManifest {
 #[derive(Deserialize, Serialize, Debug)]
 pub struct ManifestSignature {
     address: ManifestAddres,
-    #[serde(with = "signature")]
+    #[serde(with = "base64")]
     signature: Vec<u8>,
 }
 
@@ -110,7 +112,7 @@ mod public_key {
     }
 }
 
-mod signature {
+mod base64 {
     use serde::{de, Deserialize, Deserializer, Serializer};
 
     pub fn deserialize<'de, D>(d: D) -> std::result::Result<Vec<u8>, D::Error>
@@ -119,13 +121,13 @@ mod signature {
     {
         let sig_string = String::deserialize(d)?;
         base64::decode(sig_string)
-            .map_err(|err| de::Error::custom(format!("invalid signature: \"{}\"", err)))
+            .map_err(|err| de::Error::custom(format!("invalid base64: \"{}\"", err)))
     }
 
-    pub fn serialize<S>(signature: &[u8], s: S) -> std::result::Result<S::Ok, S::Error>
+    pub fn serialize<S>(data: &[u8], s: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        s.serialize_str(&base64::encode(&signature))
+        s.serialize_str(&base64::encode(&data))
     }
 }

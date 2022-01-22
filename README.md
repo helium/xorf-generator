@@ -59,7 +59,7 @@ $ xorf-generator keypair info
 }
 ```
 
-### Generate a manifest
+### Generate a Manifest
 
 Generate a manifest and signing data for a given csv file of public keys
 
@@ -68,16 +68,35 @@ $ xorf-generator manifest generate -i hotspots.csv --serial 1 -f
 ```
 
 where the `hotspots.csv` is the list of public keys to include in the filter,
-and the serial option the serial number for the signing data. This will
-generate a `data.bin` file with signing data that will need to be signed by
-`required` number of members in the public key. It also generated an
-`manifest.json` where signing information can be added by the signing members.
-The `-f` option force overwrites the signing data and manifest output files if
+and the serial option the serial number for the signing data. This will generate
+a `manifest.json` file with the hash of the signing bytes of the filter, the
+serial number and a signature array entry where multisig members will add
+signatures to. The `-f` option force overwrites the manifest output files if
 specified.
 
-### Member signing
+### Member Signing
 
-The required number of members in the `public_key` can sign the signing data with the helium wallet cli for their public key using
+The required number of members in the `public_key` can sign with the helium
+wallet cli for their public key.
+
+To get the data to sign get the csv file of public keys needs to go into the
+filter. This file can be from a repo/pull-request somewhere or shared through
+other means. The member will also need the manifest file that is being asked to
+add a signature to.
+
+Verify the manifest against the input csv and produce the signing data:
+
+```shell
+$ xorf-generator manifest verify --input /tmp/suspicious.csv
+{
+  "data": "data.bin",
+  "hash": "psu4MHfJV+pDHal5/CezlLUzJxXn2RpMmg5Gkv/UtOw=",
+  "verified": true
+}
+```
+
+Assuming the manifest matches the given file of csv files a `data.bin` is
+generated. The member can sign this data using:
 
 ```shell
 $ helium_wallet -f <wallet.key> sign file <data.bin>
@@ -89,9 +108,7 @@ The resulting wallet output will need to be added to the manifest.json and
 committed to a central location (like a repository), or sent to the person
 manging the manifest.
 
-**NOTE** Members do _not_ need to generate the manifest or singing data. They get the data.bin to sign, use the sign command and add to manifest.json or send to the person managing the manifrst.
-
-### Generate the filter
+### Generate the Filter
 
 Once the required numebr of signatures is collected, the final filter can be generated using:
 
@@ -107,7 +124,7 @@ which will take the (implied) `public key.json` and (implied) `manifest.json`, a
 
 The command prints out the multisig public key and whether it was able to successfully verify the signature included in the filter.
 
-### Verify a filter
+### Verify a Filter
 
 As a convenience you can also verify the signature of a given filter:
 
@@ -121,9 +138,9 @@ $ xorf-generator filter verify -k
 
 will verify the signature of the (impied) `filter.bin`
 
-### Check if a given public key is in a a filter
+### Check Filter Membership
 
-As a convenience you can check if a given key is in a binary filter:
+As a convenience you can check if a given public key is in a binary filter:
 
 ```shell
 $ xorf-generator filter contains 1112C1wiK9JDiEiuw79S6skHgtSDiYcvkRSWqfmJj1ncuDUgoLc

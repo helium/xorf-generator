@@ -75,7 +75,7 @@ impl Filter {
         Ok(buf.to_vec())
     }
 
-    pub fn from_bytes(data: impl AsRef<[u8]>) -> Result<Self> {
+    pub fn from_bytes<D: AsRef<[u8]>>(data: D) -> Result<Self> {
         let mut buf = data.as_ref();
         let version = buf.get_u8();
         let signature_len = buf.get_u16_le() as usize;

@@ -95,8 +95,8 @@ pub struct Generate {
 
 impl Generate {
     pub fn run(&self) -> Result {
-        let manifest = Manifest::from_csv(&self.manifest)?;
-        let key_manifest = PublicKeyManifest::from_csv(&self.key)?;
+        let manifest = Manifest::from_path(&self.manifest)?;
+        let key_manifest = PublicKeyManifest::from_path(&self.key)?;
         let key = key_manifest.public_key()?;
 
         let mut filter = Filter::from_csv(self.serial, &self.input)?;
