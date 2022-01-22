@@ -1,49 +1,81 @@
 use crate::Result;
 use bytes::{Buf, BufMut, BytesMut};
-use helium_crypto::{Keypair, PublicKey, Sign, Verify};
-use serde::Serialize;
-use xorf::{BinaryFuse32, Filter as XorFilter};
+use helium_crypto::{PublicKey, Verify};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::{fs::File, hash::Hasher, io::Read, path::Path};
+use twox_hash::XxHash64;
+use xorf::{Filter as XorFilter, Xor32};
+
+pub const VERSION: u8 = 1;
 
 #[derive(Serialize)]
 pub struct Filter {
-    version: u8,
-    signature: Vec<u8>,
-    serial: u32,
+    pub(crate) version: u8,
+    pub(crate) signature: Vec<u8>,
+    pub(crate) serial: u32,
     #[serde(skip_serializing)]
-    filter: BinaryFuse32,
+    pub(crate) filter: Xor32,
 }
 
 impl Filter {
-    pub fn new(keypair: &Keypair, serial: u32, filter: BinaryFuse32) -> Result<Self> {
-        let msg = Self::signing_bytes(serial, &filter)?;
-        let signature = keypair.sign(&msg)?;
+    pub fn new(serial: u32, filter: Xor32) -> Result<Self> {
         Ok(Self {
-            version: 1,
+            version: VERSION,
             serial,
-            signature,
+            signature: vec![],
             filter,
         })
     }
 
-    pub fn contains(&self, hash: &u64) -> bool {
-        self.filter.contains(hash)
+    pub fn from_csv<P: AsRef<Path>>(serial: u32, path: P) -> Result<Self> {
+        let mut rdr = csv::ReaderBuilder::new()
+            .has_headers(false)
+            .from_reader(File::open(path)?);
+        let mut hashes: Vec<u64> = Vec::new();
+        for record in rdr.deserialize() {
+            let row: CsvRow = record?;
+            hashes.push(public_key_hash(&row.public_key));
+        }
+        hashes.sort_unstable();
+        hashes.dedup();
+        let xor_filter = Xor32::try_from(&hashes)?;
+        Filter::new(serial, xor_filter)
+    }
+
+    pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let mut file = File::open(path)?;
+        let mut data = Vec::new();
+        file.read_to_end(&mut data)?;
+
+        let filter = Filter::from_bytes(&data)?;
+        Ok(filter)
+    }
+
+    pub fn hash(&self) -> Result<Vec<u8>> {
+        let bytes = self.signing_bytes()?;
+        Ok(Sha256::digest(&bytes).to_vec())
+    }
+
+    pub fn contains(&self, public_key: &PublicKey) -> bool {
+        self.filter.contains(&public_key_hash(public_key))
     }
 
     pub fn verify(&self, public_key: &PublicKey) -> Result {
-        let msg = Self::signing_bytes(self.serial, &self.filter)?;
+        let msg = self.signing_bytes()?;
         public_key.verify(&msg, &self.signature)?;
         Ok(())
     }
 
-    fn signing_bytes(serial: u32, filter: &BinaryFuse32) -> Result<Vec<u8>> {
+    pub fn signing_bytes(&self) -> Result<Vec<u8>> {
         let mut buf = BytesMut::new();
-        buf.put_u32_le(serial);
-        let filter_bin = bincode::serialize(filter)?;
+        buf.put_u32_le(self.serial);
+        let filter_bin = bincode::serialize(&self.filter)?;
         buf.extend_from_slice(&filter_bin);
         Ok(buf.to_vec())
     }
 
-    pub fn from_bytes(data: impl AsRef<[u8]>) -> Result<Self> {
+    pub fn from_bytes<D: AsRef<[u8]>>(data: D) -> Result<Self> {
         let mut buf = data.as_ref();
         let version = buf.get_u8();
         let signature_len = buf.get_u16_le() as usize;
@@ -63,7 +95,18 @@ impl Filter {
         buf.put_u8(self.version);
         buf.put_u16_le(self.signature.len() as u16);
         buf.extend_from_slice(&self.signature);
-        buf.extend_from_slice(&Self::signing_bytes(self.serial, &self.filter)?);
+        buf.extend_from_slice(&self.signing_bytes()?);
         Ok(buf.to_vec())
     }
+}
+
+#[derive(Debug, Deserialize)]
+struct CsvRow {
+    public_key: PublicKey,
+}
+
+fn public_key_hash(public_key: &PublicKey) -> u64 {
+    let mut hasher = XxHash64::default();
+    hasher.write(&public_key.to_vec());
+    hasher.finish()
 }

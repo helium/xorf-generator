@@ -1,20 +1,11 @@
 use crate::{
     cmd::{open_output_file, print_json},
-    Filter, Result,
+    Filter, Manifest, PublicKeyManifest, Result,
 };
-use helium_crypto::{Keypair, PublicKey};
-use serde::Deserialize;
+use helium_crypto::PublicKey;
 use serde_json::json;
-use std::{
-    convert::TryFrom,
-    fs::File,
-    hash::Hasher,
-    io::{Read, Write},
-    path::{Path, PathBuf},
-};
+use std::{io::Write, path::PathBuf};
 use structopt::StructOpt;
-use twox_hash::XxHash64;
-use xorf::BinaryFuse32;
 
 /// Commands on filters
 #[derive(StructOpt, Debug)]
@@ -38,20 +29,18 @@ impl Cmd {
 #[derive(StructOpt, Debug)]
 pub struct Contains {
     /// The input file to generate a filter for
-    #[structopt(long, short)]
+    #[structopt(long, short, default_value = "filter.bin")]
     input: PathBuf,
     /// The public key to check
-    #[structopt(long)]
     key: PublicKey,
 }
 
 impl Contains {
     pub fn run(&self) -> Result {
-        let filter = read_filter(&self.input)?;
-        let hash = public_key_hash(&self.key);
+        let filter = Filter::from_path(&self.input)?;
         let json = json!({
             "address":  self.key.to_string(),
-            "in_filter": filter.contains(&hash),
+            "in_filter": filter.contains(&self.key),
         });
         print_json(&json)
     }
@@ -61,22 +50,18 @@ impl Contains {
 #[derive(StructOpt, Debug)]
 pub struct Verify {
     /// The input file to verify the signature for
-    #[structopt(long, short)]
+    #[structopt(long, short, default_value = "filter.bin")]
     input: PathBuf,
     /// The public key to use for verification
-    #[structopt(long)]
+    #[structopt(long, short, default_value = "public_key.json")]
     key: PublicKey,
 }
 
 impl Verify {
     pub fn run(&self) -> Result {
-        let filter = read_filter(&self.input)?;
-        filter.verify(&self.key)?;
-        let json = json!({
-            "address":  self.key.to_string(),
-            "verify": true,
-        });
-        print_json(&json)
+        let filter = Filter::from_path(&self.input)?;
+        let verified = filter.verify(&self.key).is_ok();
+        print_verified(&self.key, verified)
     }
 }
 
@@ -84,74 +69,51 @@ impl Verify {
 ///
 /// This converts a csv file of given hotspot public keys and generates a binary
 /// xor filter (a binary fuse with 32 bit fingerprints to be precise). If a
-/// signing key is given on the command line the resulting binary is signed and
-/// the signature included in the resulting output.
+/// manifest file is given on the command line the resulting binary is signed
+/// and the signature included in the resulting output.
 #[derive(Debug, StructOpt)]
 pub struct Generate {
-    /// The input file to generate a filter for
+    /// The input csv file to generate a filter for
     #[structopt(long, short)]
     input: PathBuf,
+    /// The public key file to use
+    #[structopt(long, short, default_value = "public_key.json")]
+    key: PathBuf,
+
     /// The file to write the resulting binary filter to
-    #[structopt(long, short)]
+    #[structopt(long, short, default_value = "filter.bin")]
     output: PathBuf,
 
     /// The serial number of the resulting filter
-    #[structopt(long)]
+    #[structopt(long, short)]
     serial: u32,
 
-    /// The path a signing key to use
-    #[structopt(long)]
-    sign: PathBuf,
-}
-
-#[derive(Debug, Deserialize)]
-struct CsvRow {
-    public_key: PublicKey,
+    /// The path for the signature manifet to use
+    #[structopt(long, short, default_value = "manifest.json")]
+    manifest: PathBuf,
 }
 
 impl Generate {
     pub fn run(&self) -> Result {
-        // Read public keys
-        let mut hashes: Vec<u64> = Vec::new();
+        let manifest = Manifest::from_path(&self.manifest)?;
+        let key_manifest = PublicKeyManifest::from_path(&self.key)?;
+        let key = key_manifest.public_key()?;
 
-        let mut rdr = csv::ReaderBuilder::new()
-            .has_headers(false)
-            .from_reader(File::open(&self.input)?);
-        for record in rdr.deserialize() {
-            let row: CsvRow = record?;
-            hashes.push(public_key_hash(&row.public_key));
-        }
-        hashes.sort_unstable();
-        hashes.dedup();
-        let xor_filter = BinaryFuse32::try_from(&hashes).expect("filter");
-        let keypair = read_keypair(&self.sign)?;
-        let filter = Filter::new(&keypair, self.serial, xor_filter)?;
+        let mut filter = Filter::from_csv(self.serial, &self.input)?;
+        filter.signature = manifest.sign(&key_manifest)?;
         let filter_bytes = filter.to_bytes()?;
-        let mut file = open_output_file(&self.output, true)?;
+        let mut file = open_output_file(&self.output, false)?;
         file.write_all(&filter_bytes)?;
-        Ok(())
+
+        let verified = filter.verify(&key).is_ok();
+        print_verified(&key, verified)
     }
 }
 
-fn public_key_hash(public_key: &PublicKey) -> u64 {
-    let mut hasher = XxHash64::default();
-    hasher.write(&public_key.to_vec());
-    hasher.finish()
-}
-
-fn read_keypair(path: &Path) -> Result<Keypair> {
-    let mut file = File::open(path)?;
-    let mut data = Vec::new();
-    file.read_to_end(&mut data)?;
-    let keypair = Keypair::try_from(data.as_ref())?;
-    Ok(keypair)
-}
-
-fn read_filter(path: &Path) -> Result<Filter> {
-    let mut file = File::open(path)?;
-    let mut data = Vec::new();
-    file.read_to_end(&mut data)?;
-
-    let filter = Filter::from_bytes(&data)?;
-    Ok(filter)
+fn print_verified(public_key: &PublicKey, verified: bool) -> Result {
+    let json = json!({
+        "address":  public_key.to_string(),
+        "verified": verified,
+    });
+    print_json(&json)
 }
