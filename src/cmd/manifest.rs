@@ -1,6 +1,7 @@
 use crate::{
     cmd::{open_output_file, print_json},
     filter::Filter,
+    manifest::ManifestSignatureVerify,
     Manifest, Result,
 };
 use anyhow::bail;
@@ -105,10 +106,20 @@ impl Verify {
         let signing_bytes = filter.signing_bytes()?;
         data_file.write_all(&signing_bytes)?;
 
+        let verified: Vec<ManifestSignatureVerify> = manifest
+            .signatures
+            .iter()
+            .map(|signature| signature.verify(&signing_bytes))
+            .collect();
+
         let json = json!({
-            "data": self.data,
-            "hash": manifest.hash,
-            "verified": true,
+            "signing_data": self.data,
+            "hash": {
+                "serial": manifest.serial,
+                "hash": manifest.hash,
+                "verified": true,
+            },
+            "signatures": verified,
         });
         print_json(&json)
     }

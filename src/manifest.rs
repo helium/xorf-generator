@@ -1,5 +1,5 @@
 use crate::Result;
-use helium_crypto::{multihash, multisig, Network, PublicKey};
+use helium_crypto::{multihash, multisig, Network, PublicKey, Verify};
 use serde::{Deserialize, Serialize};
 use std::{fs::File, io::BufReader, ops::Deref, path::Path};
 
@@ -63,11 +63,20 @@ impl PublicKeyManifest {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ManifestSignature {
     address: ManifestAddres,
     #[serde(with = "base64")]
     signature: Vec<u8>,
+}
+
+impl ManifestSignature {
+    pub fn verify(&self, msg: &[u8]) -> ManifestSignatureVerify {
+        ManifestSignatureVerify {
+            signature: self.clone(),
+            verified: self.address.verify(msg, &self.signature).is_ok(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -84,6 +93,13 @@ impl From<ManifestAddres> for PublicKey {
     fn from(val: ManifestAddres) -> Self {
         val.0
     }
+}
+
+#[derive(Serialize, Debug)]
+pub struct ManifestSignatureVerify {
+    #[serde(flatten)]
+    signature: ManifestSignature,
+    verified: bool,
 }
 
 mod public_key {

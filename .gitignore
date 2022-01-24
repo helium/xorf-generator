@@ -1,4 +1,5 @@
 /target
 manifest.json
 *.bin
+*.key
 public_key.json

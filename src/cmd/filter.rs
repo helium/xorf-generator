@@ -86,10 +86,6 @@ pub struct Generate {
     #[structopt(long, short, default_value = "filter.bin")]
     output: PathBuf,
 
-    /// The serial number of the resulting filter
-    #[structopt(long, short)]
-    serial: u32,
-
     /// The path for the signature manifet to use
     #[structopt(long, short, default_value = "manifest.json")]
     manifest: PathBuf,
@@ -101,7 +97,7 @@ impl Generate {
         let key_manifest = PublicKeyManifest::from_path(&self.key)?;
         let key = key_manifest.public_key()?;
 
-        let mut filter = Filter::from_csv(self.serial, &self.input)?;
+        let mut filter = Filter::from_csv(manifest.serial, &self.input)?;
         filter.signature = manifest.sign(&key_manifest)?;
         let filter_bytes = filter.to_bytes()?;
         let mut file = open_output_file(&self.output, false)?;
