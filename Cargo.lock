@@ -931,7 +931,7 @@ dependencies = [
 
 [[package]]
 name = "xorf-generator"
-version = "0.2.2-dev"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "base64",
