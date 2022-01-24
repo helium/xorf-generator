@@ -40,7 +40,7 @@ jobs:
       - name: Name Release
         if: startsWith(github.ref, 'refs/tags/')
         id: name_release
-        run: echo ::set-output name=RELEASE::xorf-generator-${GITHUB_REF/refs\/tags\//}-x86_64-linux
+        run: echo ::set-output name=RELEASE::xorf-generator-${GITHUB_REF/refs\/tags\//}-linux.x64
 
       - name: Prepare Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -83,7 +83,7 @@ jobs:
       - name: Name Release
         if: startsWith(github.ref, 'refs/tags/')
         id: name_release
-        run: echo ::set-output name=RELEASE::xorf-generator-${GITHUB_REF/refs\/tags\//}-x86_64-macos
+        run: echo ::set-output name=RELEASE::xorf-generator-${GITHUB_REF/refs\/tags\//}-macos.x64
 
       - name: Prepare Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -143,7 +143,7 @@ jobs:
       - name: Name Release
         if: startsWith(github.ref, 'refs/tags/')
         id: name_release
-        run: echo ::set-output name=RELEASE::xorf-generator-${GITHUB_REF/refs\/tags\//}-x86-64-win
+        run: echo ::set-output name=RELEASE::xorf-generator-${GITHUB_REF/refs\/tags\//}-win.x64
         shell: bash
 
       - name: Prepare Release
