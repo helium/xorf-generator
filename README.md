@@ -51,7 +51,7 @@ required:
 To get info for a given multisig key:
 
 ```shell
-$ xorf-generator keypair info
+$ xorf-generator key info
 {
   "address": "1SVRdbb7Xe1ijHYwGMVx55wnmRRzwhb3jRkw5fAGr3zoaiqAq9tcLKKH",
   "keys": 2,
@@ -71,8 +71,8 @@ where the `hotspots.csv` is the list of public keys to include in the filter,
 and the serial option the serial number for the signing data. This will generate
 a `manifest.json` file with the hash of the signing bytes of the filter, the
 serial number and a signature array entry where multisig members will add
-signatures to. The `-f` option force overwrites the manifest output files if
-specified.
+signatures to. The `-f` option force overwrites an existing manifest output
+files if specified.
 
 ### Member Signing
 
@@ -89,9 +89,13 @@ Verify the manifest against the input csv and produce the signing data:
 ```shell
 $ xorf-generator manifest verify --input /tmp/suspicious.csv
 {
-  "data": "data.bin",
+  "hash": {
   "hash": "psu4MHfJV+pDHal5/CezlLUzJxXn2RpMmg5Gkv/UtOw=",
-  "verified": true
+    "serial": 1,
+    "verified": true
+  },
+  "signatures": [],
+  "signing_data": "data.bin"
 }
 ```
 
@@ -113,7 +117,7 @@ manging the manifest.
 Once the required numebr of signatures is collected, the final filter can be generated using:
 
 ```shell
-$ filter generate -i /tmp/suspicious.csv -s 1
+$ filter generate -i /tmp/suspicious.csv
 {
   "address": "1SVRdbb7Xe1ijHYwGMVx55wnmRRzwhb3jRkw5fAGr3zoaiqAq9tcLKKH",
   "verified": true
@@ -129,7 +133,7 @@ The command prints out the multisig public key and whether it was able to succes
 As a convenience you can also verify the signature of a given filter:
 
 ```shell
-$ xorf-generator filter verify -k
+$ xorf-generator filter verify
 {
 "address": "1SVRdbb7Xe1ijHYwGMVx55wnmRRzwhb3jRkw5fAGr3zoaiqAq9tcLKKH",
 "verify": true
