@@ -54,14 +54,16 @@ pub struct Verify {
     input: PathBuf,
     /// The public key to use for verification
     #[structopt(long, short, default_value = "public_key.json")]
-    key: PublicKey,
+    key: PathBuf,
 }
 
 impl Verify {
     pub fn run(&self) -> Result {
         let filter = Filter::from_path(&self.input)?;
-        let verified = filter.verify(&self.key).is_ok();
-        print_verified(&self.key, verified)
+        let key_manifest = PublicKeyManifest::from_path(&self.key)?;
+        let key = key_manifest.public_key()?;
+        let verified = filter.verify(&key).is_ok();
+        print_verified(&key, verified)
     }
 }
 
