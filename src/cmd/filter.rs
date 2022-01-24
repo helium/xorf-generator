@@ -2,6 +2,7 @@ use crate::{
     cmd::{open_output_file, print_json},
     Filter, Manifest, PublicKeyManifest, Result,
 };
+use anyhow::bail;
 use helium_crypto::PublicKey;
 use serde_json::json;
 use std::{io::Write, path::PathBuf};
@@ -104,7 +105,11 @@ impl Generate {
         file.write_all(&filter_bytes)?;
 
         let verified = filter.verify(&key).is_ok();
-        print_verified(&key, verified)
+        let _ = print_verified(&key, verified);
+        if !verified {
+            bail!("Filter does not verify with key {}", key.to_string());
+        }
+        Ok(())
     }
 }
 
