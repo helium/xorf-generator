@@ -17,17 +17,16 @@ impl Manifest {
         Ok(manifest)
     }
 
-    pub fn signatures(&self) -> Vec<(PublicKey, Vec<u8>)> {
-        self.signatures
-            .iter()
-            .map(|ms| (ms.address.0.clone(), ms.signature.clone()))
-            .collect()
-    }
-
     pub fn sign(&self, key_manifest: &PublicKeyManifest) -> Result<Vec<u8>> {
         let public_key = key_manifest.public_key()?;
         let keys = key_manifest.public_keys();
-        let signatures = self.signatures();
+        let signatures: Vec<(PublicKey, Vec<u8>)> = self
+            .signatures
+            .iter()
+            .filter(|ms| !ms.signature.is_empty())
+            .map(|ms| (ms.address.0.clone(), ms.signature.clone()))
+            .collect();
+
         let signature = multisig::Signature::new(&public_key, &keys, &signatures)?;
         Ok(signature.to_vec())
     }
@@ -95,6 +94,15 @@ impl From<ManifestAddres> for PublicKey {
     }
 }
 
+impl From<&ManifestAddres> for ManifestSignature {
+    fn from(val: &ManifestAddres) -> Self {
+        Self {
+            address: val.clone(),
+            signature: vec![],
+        }
+    }
+}
+
 #[derive(Serialize, Debug)]
 pub struct ManifestSignatureVerify {
     #[serde(flatten)]
@@ -136,6 +144,9 @@ mod base64 {
         D: Deserializer<'de>,
     {
         let sig_string = String::deserialize(d)?;
+        if sig_string.is_empty() {
+            return Ok(vec![]);
+        }
         base64::decode(sig_string)
             .map_err(|err| de::Error::custom(format!("invalid base64: \"{}\"", err)))
     }
@@ -144,6 +155,9 @@ mod base64 {
     where
         S: Serializer,
     {
+        if data.is_empty() {
+            return s.serialize_str("");
+        }
         s.serialize_str(&base64::encode(&data))
     }
 }
