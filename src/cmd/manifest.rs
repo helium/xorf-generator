@@ -1,8 +1,8 @@
 use crate::{
     cmd::{open_output_file, print_json},
     filter::Filter,
-    manifest::ManifestSignatureVerify,
-    Manifest, Result,
+    manifest::{ManifestSignature, ManifestSignatureVerify},
+    Manifest, PublicKeyManifest, Result,
 };
 use anyhow::bail;
 use serde_json::json;
@@ -37,6 +37,10 @@ pub struct Generate {
     #[structopt(long, short)]
     input: PathBuf,
 
+    /// The public key file to use
+    #[structopt(long, short, default_value = "public_key.json")]
+    key: PathBuf,
+
     /// The file to write the resulting manifest file to
     #[structopt(long, short, default_value = "manifest.json")]
     manifest: PathBuf,
@@ -54,12 +58,18 @@ impl Generate {
     pub fn run(&self) -> Result {
         let filter = Filter::from_csv(self.serial, &self.input)?;
         let filter_hash = filter.hash()?;
+        let key_manifest = PublicKeyManifest::from_path(&self.key)?;
+        let signatures = key_manifest
+            .public_keys
+            .iter()
+            .map(ManifestSignature::from)
+            .collect();
 
         let mut manifest_file = open_output_file(&self.manifest, !self.force)?;
         let manifest = Manifest {
             serial: self.serial,
             hash: base64::encode(&filter_hash),
-            signatures: vec![],
+            signatures,
         };
         serde_json::to_writer_pretty(&mut manifest_file, &manifest)?;
         Ok(())
