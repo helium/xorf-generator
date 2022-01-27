@@ -1,6 +1,6 @@
 [package]
 name = "xorf-generator"
-version = "0.3.3-beta.3"
+version = "0.3.3"
 edition = "2021"
 
 [[bin]]
