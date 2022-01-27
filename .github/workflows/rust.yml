@@ -107,23 +107,6 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Cache LLVM and Clang
-        id: cache-llvm
-        uses: actions/cache@v2
-        with:
-          path: ${{ runner.temp }}/llvm
-          key: llvm-11.0
-
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v1
-        with:
-          version: "11.0"
-          directory: ${{ runner.temp }}/llvm
-          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
-
-      - name: Set LIBCLANG_PATH
-        run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
-
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -151,7 +134,8 @@ jobs:
         env:
           NAME: ${{ steps.name_release.outputs.RELEASE }}
         run: |
-          7z a "$env:NAME.zip" -wtarget/release xorf-generator.exe
+          cd /D target/release 
+          7z a "$env:NAME.zip" xorf-generator.exe
           certUtil -hashfile "$env:NAME.zip" SHA256 > "$env:NAME.checksum"
 
       - name: Push Release
