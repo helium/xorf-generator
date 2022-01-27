@@ -135,8 +135,8 @@ jobs:
           NAME: ${{ steps.name_release.outputs.RELEASE }}
         run: |
           cd -Path target\release 
-          7z a "$env:NAME.zip" xorf-generator.exe
-          certUtil -hashfile "$env:NAME.zip" SHA256 > "$env:NAME.checksum"
+          7z a "..\..\$env:NAME.zip" xorf-generator.exe
+          certUtil -hashfile "..\..\$env:NAME.zip" SHA256 > "..\..\$env:NAME.checksum"
 
       - name: Push Release
         uses: softprops/action-gh-release@v1
