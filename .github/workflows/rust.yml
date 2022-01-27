@@ -151,7 +151,8 @@ jobs:
         env:
           NAME: ${{ steps.name_release.outputs.RELEASE }}
         run: |
-          7z a "$env:NAME.zip" -wtarget/release xorf-generator.exe
+          cd /D target/release 
+          7z a "$env:NAME.zip" xorf-generator.exe
           certUtil -hashfile "$env:NAME.zip" SHA256 > "$env:NAME.checksum"
 
       - name: Push Release
