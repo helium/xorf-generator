@@ -158,6 +158,6 @@ mod base64 {
         if data.is_empty() {
             return s.serialize_str("");
         }
-        s.serialize_str(&base64::encode(&data))
+        s.serialize_str(&base64::encode(data))
     }
 }

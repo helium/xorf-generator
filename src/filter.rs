@@ -35,7 +35,15 @@ impl Filter {
         let mut hashes: Vec<u64> = Vec::new();
         for record in rdr.deserialize() {
             let row: CsvRow = record?;
-            hashes.push(public_key_hash(&row.public_key));
+            if let Some(second_edge_key) = row.second_edge_key {
+                // edge key order needs to be sorted to be deterministic
+                // irregardless of edge direction
+                let mut a = [row.public_key, second_edge_key];
+                a.sort();
+                hashes.push(edge_hash(&a[0], &a[1]));
+            } else {
+                hashes.push(public_key_hash(&row.public_key));
+            }
         }
         hashes.sort_unstable();
         hashes.dedup();
@@ -103,10 +111,18 @@ impl Filter {
 #[derive(Debug, Deserialize)]
 struct CsvRow {
     public_key: PublicKey,
+    second_edge_key: Option<PublicKey>,
 }
 
 fn public_key_hash(public_key: &PublicKey) -> u64 {
     let mut hasher = XxHash64::default();
     hasher.write(&public_key.to_vec());
+    hasher.finish()
+}
+
+fn edge_hash(a: &PublicKey, b: &PublicKey) -> u64 {
+    let mut hasher = XxHash64::default();
+    hasher.write(&a.to_vec());
+    hasher.write(&b.to_vec());
     hasher.finish()
 }

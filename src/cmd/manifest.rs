@@ -68,7 +68,7 @@ impl Generate {
         let mut manifest_file = open_output_file(&self.manifest, !self.force)?;
         let manifest = Manifest {
             serial: self.serial,
-            hash: base64::encode(&filter_hash),
+            hash: base64::encode(filter_hash),
             signatures,
         };
         serde_json::to_writer_pretty(&mut manifest_file, &manifest)?;
