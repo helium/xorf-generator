@@ -8,3 +8,6 @@ pub use filter::Filter;
 
 mod manifest;
 pub use manifest::{Manifest, PublicKeyManifest};
+
+mod descriptor;
+pub use descriptor::{Descriptor, Edges};

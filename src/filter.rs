@@ -28,7 +28,7 @@ impl Filter {
         })
     }
 
-    pub fn from_csv<P: AsRef<Path>>(serial: u32, path: P) -> Result<Self> {
+    pub fn from_csv(serial: u32, path: &Path) -> Result<Self> {
         let mut rdr = csv::ReaderBuilder::new()
             .has_headers(false)
             .from_reader(File::open(path)?);
