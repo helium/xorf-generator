@@ -1,15 +1,26 @@
 use crate::{cmd::print_json, manifest::PublicKeyManifest, Result};
 use serde_json::json;
 use std::path::PathBuf;
-use structopt::StructOpt;
 
-/// Commands on keypairs
-#[derive(StructOpt, Debug)]
-pub enum Cmd {
-    Info(Info),
+#[derive(clap::Args, Debug)]
+pub struct Cmd {
+    #[command(subcommand)]
+    pub cmd: KeyCommand,
 }
 
 impl Cmd {
+    pub fn run(&self) -> Result {
+        self.cmd.run()
+    }
+}
+
+/// Commands on keypairs
+#[derive(clap::Subcommand, Debug)]
+pub enum KeyCommand {
+    Info(Info),
+}
+
+impl KeyCommand {
     pub fn run(&self) -> Result {
         match self {
             Self::Info(cmd) => cmd.run(),
@@ -18,10 +29,10 @@ impl Cmd {
 }
 
 /// Displays key information for a given keypair
-#[derive(StructOpt, Debug)]
+#[derive(clap::Args, Debug)]
 pub struct Info {
     /// File to read public key from
-    #[structopt(default_value = "public_key.json")]
+    #[arg(default_value = "public_key.json")]
     input: PathBuf,
 }
 

@@ -6,17 +6,28 @@ use anyhow::bail;
 use helium_crypto::PublicKey;
 use serde_json::json;
 use std::{io::Write, path::PathBuf};
-use structopt::StructOpt;
+
+#[derive(clap::Args, Debug)]
+pub struct Cmd {
+    #[command(subcommand)]
+    pub cmd: FilterCommand,
+}
+
+impl Cmd {
+    pub fn run(&self) -> Result {
+        self.cmd.run()
+    }
+}
 
 /// Commands on filters
-#[derive(StructOpt, Debug)]
-pub enum Cmd {
+#[derive(clap::Subcommand, Debug)]
+pub enum FilterCommand {
     Generate(Generate),
     Contains(Contains),
     Verify(Verify),
 }
 
-impl Cmd {
+impl FilterCommand {
     pub fn run(&self) -> Result {
         match self {
             Self::Generate(cmd) => cmd.run(),
@@ -27,10 +38,10 @@ impl Cmd {
 }
 
 /// Check if a given filter file contains a given public key
-#[derive(StructOpt, Debug)]
+#[derive(clap::Args, Debug)]
 pub struct Contains {
     /// The input file to generate a filter for
-    #[structopt(long, short, default_value = "filter.bin")]
+    #[arg(long, short, default_value = "filter.bin")]
     input: PathBuf,
     /// The public key to check
     key: PublicKey,
@@ -48,13 +59,13 @@ impl Contains {
 }
 
 /// Verifies a given filter against the given public key
-#[derive(StructOpt, Debug)]
+#[derive(clap::Args, Debug)]
 pub struct Verify {
     /// The input file to verify the signature for
-    #[structopt(long, short, default_value = "filter.bin")]
+    #[arg(long, short, default_value = "filter.bin")]
     input: PathBuf,
     /// The public key to use for verification
-    #[structopt(long, short, default_value = "public_key.json")]
+    #[arg(long, short, default_value = "public_key.json")]
     key: PathBuf,
 }
 
@@ -74,21 +85,21 @@ impl Verify {
 /// xor filter (a binary fuse with 32 bit fingerprints to be precise). If a
 /// manifest file is given on the command line the resulting binary is signed
 /// and the signature included in the resulting output.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Args)]
 pub struct Generate {
     /// The input csv file to generate a filter for
-    #[structopt(long, short)]
+    #[arg(long, short)]
     input: PathBuf,
     /// The public key file to use
-    #[structopt(long, short, default_value = "public_key.json")]
+    #[arg(long, short, default_value = "public_key.json")]
     key: PathBuf,
 
     /// The file to write the resulting binary filter to
-    #[structopt(long, short, default_value = "filter.bin")]
+    #[arg(long, short, default_value = "filter.bin")]
     output: PathBuf,
 
     /// The path for the signature manifet to use
-    #[structopt(long, short, default_value = "manifest.json")]
+    #[arg(long, short, default_value = "manifest.json")]
     manifest: PathBuf,
 }
 
