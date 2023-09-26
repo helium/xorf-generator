@@ -1,6 +1,6 @@
 use crate::{
     cmd::{open_output_file, print_json},
-    Filter, Manifest, PublicKeyManifest, Result,
+    Descriptor, Filter, Manifest, PublicKeyManifest, Result,
 };
 use anyhow::bail;
 use helium_crypto::PublicKey;
@@ -87,8 +87,8 @@ impl Verify {
 /// and the signature included in the resulting output.
 #[derive(Debug, clap::Args)]
 pub struct Generate {
-    /// The input csv file to generate a filter for
-    #[arg(long, short)]
+    /// The input descriptor file to generate a filter for
+    #[arg(long, short, default_value = "descriptor.json")]
     input: PathBuf,
     /// The public key file to use
     #[arg(long, short, default_value = "public_key.json")]
@@ -109,7 +109,8 @@ impl Generate {
         let key_manifest = PublicKeyManifest::from_path(&self.key)?;
         let key = key_manifest.public_key()?;
 
-        let mut filter = Filter::from_csv(manifest.serial, &self.input)?;
+        let descriptor = Descriptor::from_csv(&self.input)?;
+        let mut filter = Filter::from_descriptor(manifest.serial, &descriptor)?;
         filter.signature = manifest.sign(&key_manifest)?;
         let filter_bytes = filter.to_bytes()?;
         let mut file = open_output_file(&self.output, false)?;

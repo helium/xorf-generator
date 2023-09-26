@@ -1,7 +1,7 @@
-use crate::Result;
+use crate::{Descriptor, Result};
 use bytes::{Buf, BufMut, BytesMut};
 use helium_crypto::{PublicKey, Verify};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{fs::File, hash::Hasher, io::Read, path::Path};
 use twox_hash::XxHash64;
@@ -28,22 +28,15 @@ impl Filter {
         })
     }
 
-    pub fn from_csv(serial: u32, path: &Path) -> Result<Self> {
-        let mut rdr = csv::ReaderBuilder::new()
-            .has_headers(false)
-            .from_reader(File::open(path)?);
+    pub fn from_descriptor(serial: u32, descriptor: &Descriptor) -> Result<Self> {
         let mut hashes: Vec<u64> = Vec::new();
-        for record in rdr.deserialize() {
-            let row: CsvRow = record?;
-            if let Some(target_key) = row.target_key {
-                // edge key order needs to be sorted to be deterministic
-                // irregardless of edge direction
-                let mut a = [row.public_key, target_key];
-                a.sort();
-                hashes.push(edge_hash(&a[0], &a[1]));
-            } else {
-                hashes.push(public_key_hash(&row.public_key));
-            }
+        for node in &descriptor.nodes {
+            hashes.push(public_key_hash(&node.key));
+        }
+        for edge in &descriptor.edges.edges {
+            let source = &descriptor.edges.keys[edge.source as usize];
+            let target = &descriptor.edges.keys[edge.target as usize];
+            hashes.push(edge_hash(source, target));
         }
         hashes.sort_unstable();
         hashes.dedup();
@@ -106,12 +99,6 @@ impl Filter {
         buf.extend_from_slice(&self.signing_bytes()?);
         Ok(buf.to_vec())
     }
-}
-
-#[derive(Debug, Deserialize)]
-struct CsvRow {
-    pub(crate) public_key: PublicKey,
-    pub(crate) target_key: Option<PublicKey>,
 }
 
 fn public_key_hash(public_key: &PublicKey) -> u64 {

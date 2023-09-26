@@ -18,15 +18,15 @@ pub struct Edges {
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Edge {
-    source: u32,
-    target: u32,
-    reason: Option<String>,
+    pub source: u32,
+    pub target: u32,
+    pub reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Eq)]
 pub struct Node {
-    key: PublicKey,
-    reason: Option<String>,
+    pub key: PublicKey,
+    pub reason: Option<String>,
 }
 
 impl PartialEq for Node {
