@@ -1,22 +1,23 @@
-use structopt::StructOpt;
+use clap::Parser;
 use xorf_generator::{cmd, Result};
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = env!("CARGO_BIN_NAME"), version = env!("CARGO_PKG_VERSION"), about = "Gateway Manufacturing ")]
+#[derive(Debug, Parser)]
+#[command(version = env!("CARGO_PKG_VERSION"))]
+#[command(name = env!("CARGO_BIN_NAME"))]
 pub struct Cli {
-    #[structopt(flatten)]
+    #[command(subcommand)]
     cmd: Cmd,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Subcommand)]
 pub enum Cmd {
-    Filter(Box<cmd::filter::Cmd>),
+    Filter(cmd::filter::Cmd),
     Key(cmd::key::Cmd),
     Manifest(cmd::manifest::Cmd),
 }
 
 fn main() -> Result {
-    let cli = Cli::from_args();
+    let cli = Cli::parse();
     run(cli)
 }
 

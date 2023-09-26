@@ -137,6 +137,7 @@ mod public_key {
 }
 
 mod base64 {
+    use base64::{engine::general_purpose::STANDARD, Engine};
     use serde::{de, Deserialize, Deserializer, Serializer};
 
     pub fn deserialize<'de, D>(d: D) -> std::result::Result<Vec<u8>, D::Error>
@@ -147,7 +148,8 @@ mod base64 {
         if sig_string.is_empty() {
             return Ok(vec![]);
         }
-        base64::decode(sig_string)
+        STANDARD
+            .decode(sig_string)
             .map_err(|err| de::Error::custom(format!("invalid base64: \"{}\"", err)))
     }
 
@@ -158,6 +160,6 @@ mod base64 {
         if data.is_empty() {
             return s.serialize_str("");
         }
-        s.serialize_str(&base64::encode(data))
+        s.serialize_str(&STANDARD.encode(data))
     }
 }

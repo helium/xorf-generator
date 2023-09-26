@@ -9,16 +9,16 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-anyhow = "1"
 base64 = "0"
 sha2 = "0"
 bytes = "*"
-structopt = "0"
+clap = { version = "4", features = ["derive"] }
 bincode = "1"
 csv = "1"
 twox-hash = "1"
-xorf = {version = "0", features = ["serde"] }
-serde = {version = "1", features = ["derive"]}
+xorf = { version = "0", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rand = "0.8"
-helium-crypto = {git = "https://github.com/helium/helium-crypto-rs", tag="v0.3.3", features = ["multisig"]}
+helium-crypto = { version = "0.8.0", features = ["multisig"] }
+anyhow = "1"

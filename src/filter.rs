@@ -35,10 +35,10 @@ impl Filter {
         let mut hashes: Vec<u64> = Vec::new();
         for record in rdr.deserialize() {
             let row: CsvRow = record?;
-            if let Some(second_edge_key) = row.second_edge_key {
+            if let Some(target_key) = row.target_key {
                 // edge key order needs to be sorted to be deterministic
                 // irregardless of edge direction
-                let mut a = [row.public_key, second_edge_key];
+                let mut a = [row.public_key, target_key];
                 a.sort();
                 hashes.push(edge_hash(&a[0], &a[1]));
             } else {
@@ -62,7 +62,7 @@ impl Filter {
 
     pub fn hash(&self) -> Result<Vec<u8>> {
         let bytes = self.signing_bytes()?;
-        Ok(Sha256::digest(&bytes).to_vec())
+        Ok(Sha256::digest(bytes).to_vec())
     }
 
     pub fn contains(&self, public_key: &PublicKey) -> bool {
@@ -110,8 +110,8 @@ impl Filter {
 
 #[derive(Debug, Deserialize)]
 struct CsvRow {
-    public_key: PublicKey,
-    second_edge_key: Option<PublicKey>,
+    pub(crate) public_key: PublicKey,
+    pub(crate) target_key: Option<PublicKey>,
 }
 
 fn public_key_hash(public_key: &PublicKey) -> u64 {

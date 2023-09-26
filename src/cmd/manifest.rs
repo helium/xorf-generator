@@ -5,18 +5,30 @@ use crate::{
     Manifest, PublicKeyManifest, Result,
 };
 use anyhow::bail;
+use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::json;
 use std::{io::Write, path::PathBuf};
-use structopt::StructOpt;
+
+#[derive(clap::Args, Debug)]
+pub struct Cmd {
+    #[command(subcommand)]
+    pub cmd: ManifestCommand,
+}
+
+impl Cmd {
+    pub fn run(&self) -> Result {
+        self.cmd.run()
+    }
+}
 
 /// Commands on manifests
-#[derive(StructOpt, Debug)]
-pub enum Cmd {
+#[derive(clap::Subcommand, Debug)]
+pub enum ManifestCommand {
     Generate(Generate),
     Verify(Verify),
 }
 
-impl Cmd {
+impl ManifestCommand {
     pub fn run(&self) -> Result {
         match self {
             Self::Generate(cmd) => cmd.run(),
@@ -30,27 +42,27 @@ impl Cmd {
 /// This takes a a filename for a list of hotspots and generates a manifest file
 /// that can be used to add signatures to as well as binary file which contains
 /// the data of the filter to sign.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Args)]
 
 pub struct Generate {
     /// The input csv file to generate a manifest for
-    #[structopt(long, short)]
+    #[arg(long, short)]
     input: PathBuf,
 
     /// The public key file to use
-    #[structopt(long, short, default_value = "public_key.json")]
+    #[arg(long, short, default_value = "public_key.json")]
     key: PathBuf,
 
     /// The file to write the resulting manifest file to
-    #[structopt(long, short, default_value = "manifest.json")]
+    #[arg(long, short, default_value = "manifest.json")]
     manifest: PathBuf,
 
     /// Whether to force overwrite an existing manifest file
-    #[structopt(long, short)]
+    #[arg(long, short)]
     force: bool,
 
     /// The serial number for the filter
-    #[structopt(long, short)]
+    #[arg(long, short)]
     serial: u32,
 }
 
@@ -68,7 +80,7 @@ impl Generate {
         let mut manifest_file = open_output_file(&self.manifest, !self.force)?;
         let manifest = Manifest {
             serial: self.serial,
-            hash: base64::encode(filter_hash),
+            hash: STANDARD.encode(filter_hash),
             signatures,
         };
         serde_json::to_writer_pretty(&mut manifest_file, &manifest)?;
@@ -81,34 +93,34 @@ impl Generate {
 /// This takes a a filename for a list of hotspots and a manifest file, and
 /// generates the file to sign while verifying that the given manifest hash and
 /// serial number is a match for the csv data.
-#[derive(Debug, StructOpt)]
+#[derive(Debug, clap::Args)]
 
 pub struct Verify {
     /// The input csv file to verify the manifest and generate a filter for
-    #[structopt(long, short)]
+    #[arg(long, short)]
     input: PathBuf,
 
     /// The manifest file to verify
-    #[structopt(long, short, default_value = "manifest.json")]
+    #[arg(long, short, default_value = "manifest.json")]
     manifest: PathBuf,
 
     /// The file to write the filter signing data to
-    #[structopt(long, short, default_value = "data.bin")]
+    #[arg(long, short, default_value = "data.bin")]
     data: PathBuf,
 }
 
 impl Verify {
     pub fn run(&self) -> Result {
         let manifest = Manifest::from_path(&self.manifest)?;
-        let manifest_hash = base64::decode(&manifest.hash)?;
+        let manifest_hash = STANDARD.decode(&manifest.hash)?;
         let filter = Filter::from_csv(manifest.serial, &self.input)?;
         let filter_hash = filter.hash()?;
 
         if manifest_hash != filter_hash {
             bail!(
                 "manifest hash {} does not match filter hash {}",
-                base64::encode(manifest_hash),
-                base64::encode(filter_hash)
+                STANDARD.encode(manifest_hash),
+                STANDARD.encode(filter_hash)
             )
         }
 
