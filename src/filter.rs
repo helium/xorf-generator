@@ -55,7 +55,7 @@ impl Filter {
 
     pub fn hash(&self) -> Result<Vec<u8>> {
         let bytes = self.signing_bytes()?;
-        Ok(Sha256::digest(bytes).to_vec())
+        Ok(Sha256::digest(&bytes).to_vec())
     }
 
     pub fn contains(&self, public_key: &PublicKey) -> bool {

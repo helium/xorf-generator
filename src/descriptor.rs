@@ -43,7 +43,7 @@ impl std::hash::Hash for Node {
 
 impl PartialOrd for Node {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.key.partial_cmp(&other.key)
+        Some(self.cmp(other))
     }
 }
 
@@ -85,7 +85,7 @@ impl PartialEq for EdgeNode {
 
 impl PartialOrd for EdgeNode {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.source.partial_cmp(&other.source)
+        Some(self.cmp(other))
     }
 }
 
