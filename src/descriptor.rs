@@ -106,6 +106,12 @@ impl EdgeNode {
 }
 
 impl Descriptor {
+    pub fn from_json(path: &Path) -> Result<Self> {
+        let file = File::open(path)?;
+        let descriptor = serde_json::from_reader(file)?;
+        Ok(descriptor)
+    }
+
     pub fn from_csv(path: &Path) -> Result<Self> {
         let mut rdr = csv::ReaderBuilder::new()
             .has_headers(false)

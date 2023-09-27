@@ -68,7 +68,7 @@ pub struct Generate {
 
 impl Generate {
     pub fn run(&self) -> Result {
-        let descriptor = Descriptor::from_csv(&self.input)?;
+        let descriptor = Descriptor::from_json(&self.input)?;
         let filter = Filter::from_descriptor(self.serial, &descriptor)?;
         let filter_hash = filter.hash()?;
         let key_manifest = PublicKeyManifest::from_path(&self.key)?;
@@ -115,7 +115,7 @@ impl Verify {
         let manifest = Manifest::from_path(&self.manifest)?;
         let manifest_hash = STANDARD.decode(&manifest.hash)?;
 
-        let descriptor = Descriptor::from_csv(&self.input)?;
+        let descriptor = Descriptor::from_json(&self.input)?;
         let filter = Filter::from_descriptor(manifest.serial, &descriptor)?;
         let filter_hash = filter.hash()?;
 

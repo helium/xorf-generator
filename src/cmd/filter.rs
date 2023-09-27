@@ -116,7 +116,7 @@ impl Generate {
         let key_manifest = PublicKeyManifest::from_path(&self.key)?;
         let key = key_manifest.public_key()?;
 
-        let descriptor = Descriptor::from_csv(&self.input)?;
+        let descriptor = Descriptor::from_json(&self.input)?;
         let mut filter = Filter::from_descriptor(manifest.serial, &descriptor)?;
         filter.signature = manifest.sign(&key_manifest)?;
         let filter_bytes = filter.to_bytes()?;
