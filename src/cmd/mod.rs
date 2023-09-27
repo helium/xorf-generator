@@ -1,5 +1,6 @@
 use std::{fs, io, path::Path};
 
+pub mod descriptor;
 pub mod filter;
 pub mod key;
 pub mod manifest;

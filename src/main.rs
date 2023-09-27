@@ -11,6 +11,7 @@ pub struct Cli {
 
 #[derive(Debug, clap::Subcommand)]
 pub enum Cmd {
+    Descriptor(cmd::descriptor::Cmd),
     Filter(cmd::filter::Cmd),
     Key(cmd::key::Cmd),
     Manifest(cmd::manifest::Cmd),
@@ -23,6 +24,7 @@ fn main() -> Result {
 
 fn run(cli: Cli) -> Result {
     match cli.cmd {
+        Cmd::Descriptor(cmd) => cmd.run(),
         Cmd::Filter(cmd) => cmd.run(),
         Cmd::Key(cmd) => cmd.run(),
         Cmd::Manifest(cmd) => cmd.run(),

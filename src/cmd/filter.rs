@@ -1,6 +1,6 @@
 use crate::{
     cmd::{open_output_file, print_json},
-    Filter, Manifest, PublicKeyManifest, Result,
+    Descriptor, Filter, Manifest, PublicKeyManifest, Result,
 };
 use anyhow::bail;
 use helium_crypto::PublicKey;
@@ -37,7 +37,7 @@ impl FilterCommand {
     }
 }
 
-/// Check if a given filter file contains a given public key
+/// Check if a given filter file contains a given public key or edge.
 #[derive(clap::Args, Debug)]
 pub struct Contains {
     /// The input file to generate a filter for
@@ -45,14 +45,21 @@ pub struct Contains {
     input: PathBuf,
     /// The public key to check
     key: PublicKey,
+    /// The publc key of the target of an edge to check
+    target: Option<PublicKey>,
 }
 
 impl Contains {
     pub fn run(&self) -> Result {
         let filter = Filter::from_path(&self.input)?;
+        let in_filter = if let Some(target) = &self.target {
+            filter.contains_edge(&self.key, target)
+        } else {
+            filter.contains(&self.key)
+        };
         let json = json!({
             "address":  self.key.to_string(),
-            "in_filter": filter.contains(&self.key),
+            "in_filter": in_filter,
         });
         print_json(&json)
     }
@@ -87,8 +94,8 @@ impl Verify {
 /// and the signature included in the resulting output.
 #[derive(Debug, clap::Args)]
 pub struct Generate {
-    /// The input csv file to generate a filter for
-    #[arg(long, short)]
+    /// The input descriptor file to generate a filter for
+    #[arg(long, short, default_value = "descriptor.json")]
     input: PathBuf,
     /// The public key file to use
     #[arg(long, short, default_value = "public_key.json")]
@@ -109,7 +116,8 @@ impl Generate {
         let key_manifest = PublicKeyManifest::from_path(&self.key)?;
         let key = key_manifest.public_key()?;
 
-        let mut filter = Filter::from_csv(manifest.serial, &self.input)?;
+        let descriptor = Descriptor::from_json(&self.input)?;
+        let mut filter = Filter::from_descriptor(manifest.serial, &descriptor)?;
         filter.signature = manifest.sign(&key_manifest)?;
         let filter_bytes = filter.to_bytes()?;
         let mut file = open_output_file(&self.output, false)?;
