@@ -62,6 +62,10 @@ impl Filter {
         self.filter.contains(&public_key_hash(public_key))
     }
 
+    pub fn contains_edge(&self, source: &PublicKey, target: &PublicKey) -> bool {
+        self.filter.contains(&edge_hash(source, target))
+    }
+
     pub fn verify(&self, public_key: &PublicKey) -> Result {
         let msg = self.signing_bytes()?;
         public_key.verify(&msg, &self.signature)?;

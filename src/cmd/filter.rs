@@ -37,7 +37,7 @@ impl FilterCommand {
     }
 }
 
-/// Check if a given filter file contains a given public key
+/// Check if a given filter file contains a given public key or edge.
 #[derive(clap::Args, Debug)]
 pub struct Contains {
     /// The input file to generate a filter for
@@ -45,14 +45,21 @@ pub struct Contains {
     input: PathBuf,
     /// The public key to check
     key: PublicKey,
+    /// The publc key of the target of an edge to check
+    target: Option<PublicKey>,
 }
 
 impl Contains {
     pub fn run(&self) -> Result {
         let filter = Filter::from_path(&self.input)?;
+        let in_filter = if let Some(target) = &self.target {
+            filter.contains_edge(&self.key, target)
+        } else {
+            filter.contains(&self.key)
+        };
         let json = json!({
             "address":  self.key.to_string(),
-            "in_filter": filter.contains(&self.key),
+            "in_filter": in_filter,
         });
         print_json(&json)
     }
