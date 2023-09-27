@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::{filter::edge_order, Result};
 use helium_crypto::PublicKey;
 use indexmap::IndexSet;
 use serde::{Deserialize, Serialize};
@@ -123,11 +123,9 @@ impl Descriptor {
         for record in rdr.deserialize() {
             let row: CsvRow = record?;
             if let Some(target_key) = row.target_key {
-                // edge key order needs to be sorted to be deterministic
-                // irregardless of edge direction
-                let mut a = [row.public_key, target_key];
-                a.sort();
-                let edge = EdgeNode::new(a[0].clone(), a[1].clone(), row.reason);
+                // we enforce edge order here to dedupe two way edges.
+                let (source, target) = edge_order(&row.public_key, &target_key);
+                let edge = EdgeNode::new(source.clone(), target.clone(), row.reason);
                 edge_keys.insert(edge.source.clone());
                 edge_keys.insert(edge.target.clone());
                 edge_nodes.insert(edge);
