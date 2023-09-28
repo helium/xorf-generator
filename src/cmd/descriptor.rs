@@ -66,19 +66,19 @@ pub struct CountEdges {
 impl CountEdges {
     pub fn run(&self) -> Result {
         let descriptor = Descriptor::from_json(&self.input)?;
-        let mut counts: HashMap<PublicKey, i32> = HashMap::new();
+        let mut counts: HashMap<&PublicKey, i32> = HashMap::new();
         for node in &descriptor.nodes {
-            counts.insert(node.key.clone(), -1); // -1 denotes all edges
+            counts.insert(&node.key, -1); // -1 denotes all edges
         }
         for edge in &descriptor.edges.edges {
             let source = &descriptor.edges.keys[edge.source as usize];
             let target = &descriptor.edges.keys[edge.target as usize];
             counts
-                .entry(source.clone())
+                .entry(source)
                 .and_modify(|counter| *counter += 1)
                 .or_insert(1);
             counts
-                .entry(target.clone())
+                .entry(target)
                 .and_modify(|counter| *counter += 1)
                 .or_insert(1);
         }
