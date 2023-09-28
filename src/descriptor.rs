@@ -126,9 +126,17 @@ impl Descriptor {
                 // we enforce edge order here to dedupe two way edges.
                 let (source, target) = edge_order(&row.public_key, &target_key);
                 let edge = EdgeNode::new(source.clone(), target.clone(), row.reason);
-                edge_keys.insert(edge.source.clone());
-                edge_keys.insert(edge.target.clone());
-                edge_nodes.insert(edge);
+                if !(nodes.contains(&Node {
+                    key: edge.source.clone(),
+                    reason: None,
+                }) || nodes.contains(&Node {
+                    key: edge.target.clone(),
+                    reason: None,
+                })) {
+                    edge_keys.insert(edge.source.clone());
+                    edge_keys.insert(edge.target.clone());
+                    edge_nodes.insert(edge);
+                }
             } else {
                 nodes.insert(Node {
                     key: row.public_key,
