@@ -65,7 +65,7 @@ impl Contains {
     }
 }
 
-/// Verifies a given filter against the given multisigpublic key
+/// Verifies a given filter against the given multisig public key
 #[derive(clap::Args, Debug)]
 pub struct Verify {
     /// The input file to verify the signature for
@@ -82,6 +82,9 @@ impl Verify {
         let key_manifest = PublicKeyManifest::from_path(&self.key)?;
         let key = key_manifest.public_key()?;
         let verified = filter.verify(&key).is_ok();
+        if !verified {
+            bail!("Filter does not verify with key {key}");
+        }
         print_verified(&key, verified)
     }
 }
@@ -118,13 +121,14 @@ impl Generate {
 
         let mut filter = Filter::from_signing_path(&self.data)?;
         filter.signature = manifest.sign(&key_manifest)?;
+        filter.serial = manifest.serial;
         let filter_bytes = filter.to_bytes()?;
         let mut file = open_output_file(&self.output, false)?;
         file.write_all(&filter_bytes)?;
 
         let verified = filter.verify(&key).is_ok();
         if !verified {
-            bail!("Filter does not verify with key {}", key.to_string());
+            bail!("Filter does not verify with key {key}");
         }
         print_verified(&key, verified)
     }

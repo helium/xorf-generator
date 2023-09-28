@@ -2,11 +2,11 @@ use crate::{
     cmd::{open_output_file, print_json},
     filter::Filter,
     manifest::{ManifestSignature, ManifestSignatureVerify},
-    Descriptor, Manifest, PublicKeyManifest, Result,
+    Manifest, PublicKeyManifest, Result,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::json;
-use std::{io::Write, path::PathBuf};
+use std::path::PathBuf;
 
 #[derive(clap::Args, Debug)]
 pub struct Cmd {
@@ -44,11 +44,7 @@ impl ManifestCommand {
 #[derive(Debug, clap::Args)]
 
 pub struct Generate {
-    /// The descriptor file to generate a manifest for
-    #[arg(long, short, default_value = "descriptor.json")]
-    input: PathBuf,
-
-    /// The file to write the filter signing data to
+    /// The signing data to generate a manifest for
     #[arg(long, short, default_value = "data.bin")]
     data: PathBuf,
 
@@ -71,8 +67,7 @@ pub struct Generate {
 
 impl Generate {
     pub fn run(&self) -> Result {
-        let descriptor = Descriptor::from_json(&self.input)?;
-        let filter = Filter::from_descriptor(self.serial, &descriptor)?;
+        let filter = Filter::from_signing_path(&self.data)?;
         let filter_hash = filter.hash()?;
         let key_manifest = PublicKeyManifest::from_path(&self.key)?;
         let signatures = key_manifest
@@ -89,10 +84,6 @@ impl Generate {
         };
         serde_json::to_writer_pretty(&mut manifest_file, &manifest)?;
 
-        let mut data_file = open_output_file(&self.data, false)?;
-        let signing_bytes = filter.to_signing_bytes()?;
-        data_file.write_all(&signing_bytes)?;
-
         Ok(())
     }
 }
@@ -100,7 +91,9 @@ impl Generate {
 /// Verify the manifest for a given datafile, public key and manifest file
 ///
 /// This takes a a filename of a binary filter data file as well as the manifest
-///  file and public multisig key, and displays whether the manifest verifies
+///  file and public multisig key, and validates whether the manifest verifies
+///  the filter hash. If so it prints out signature status for each multisig
+///  member.
 #[derive(Debug, clap::Args)]
 
 pub struct Verify {
@@ -129,6 +122,9 @@ impl Verify {
         let signing_bytes = filter.to_signing_bytes()?;
 
         let hash_verified = manifest_hash == filter_hash;
+        if !hash_verified {
+            anyhow::bail!("Filter hash does not match manifest hash");
+        }
         let signtatures: Vec<ManifestSignatureVerify> = manifest
             .signatures
             .iter()

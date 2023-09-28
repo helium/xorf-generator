@@ -72,19 +72,29 @@ where the `hotspots.csv` is the list of public keys and edges to include in the
 filter. This generates a (large) `descriptor.json` file with the list of public
 keys and edges.
 
+### Generate Signing Data
+
+The signing data is the data that is signed by each member of the multisig and used as the source for all remaining commands.
+
+```shell
+$ xorf-generator data generate
+```
+
+Generates a `data.bin` file from the (implied) `descriptor.json` file.
+
 ### Generate a Manifest
 
-Generate a manifest and signing data for a given descriptor
+Generate a manifest for signing data and serial number:
 
 ```shell
 $ xorf-generator manifest generate  --serial 1 -f
 ```
 
-which takes `descriptor.json` and a serial number for the resulting signing
-data. This will generate `data.bin` which is the data to be signed and a
-`manifest.json` file with the hash of the generated data, the serial number and
-a signature array entry where multisig members will add signatures to. The `-f`
-option force overwrites an existing manifest output files if specified.
+which takes `descriptor.json` and a serial number for the final filter. data.
+This will generate a `manifest.json` file with the hash of the signing data, the
+serial number and a signature array entry where multisig members will add
+signatures to. The `-f` option force overwrites an existing manifest output
+files if specified.
 
 ### Member Signing
 
