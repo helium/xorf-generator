@@ -93,7 +93,7 @@ impl CountEdges {
             .from_path(&self.output)?;
 
         for (key, count) in counts {
-            wtr.serialize(Row { key, count });
+            wtr.serialize(Row { key, count })?;
         }
 
         Ok(())
