@@ -59,10 +59,6 @@ pub struct Generate {
     /// Whether to force overwrite an existing manifest file
     #[arg(long, short)]
     force: bool,
-
-    /// The serial number for the filter
-    #[arg(long, short)]
-    serial: u32,
 }
 
 impl Generate {
@@ -78,7 +74,7 @@ impl Generate {
 
         let mut manifest_file = open_output_file(&self.manifest, !self.force)?;
         let manifest = Manifest {
-            serial: self.serial,
+            serial: filter.serial,
             hash: STANDARD.encode(filter_hash),
             signatures,
         };
@@ -124,6 +120,9 @@ impl Verify {
         let hash_verified = manifest_hash == filter_hash;
         if !hash_verified {
             anyhow::bail!("Filter hash does not match manifest hash");
+        }
+        if filter.serial != manifest.serial {
+            anyhow::bail!("Filter serial does not match manifest serial");
         }
         let signtatures: Vec<ManifestSignatureVerify> = manifest
             .signatures

@@ -36,13 +36,16 @@ pub struct Generate {
     /// The file to write the resulting signing bytes to
     #[arg(default_value = "data.bin")]
     output: PathBuf,
+    /// The serial number embedded in the signing bytes
+    #[arg(long, short)]
+    serial: u32,
 }
 
 impl Generate {
     pub fn run(&self) -> Result {
         let mut data_file = open_output_file(&self.output, false)?;
         let descriptor = Descriptor::from_json(&self.input)?;
-        let filter = Filter::from_descriptor(0, &descriptor)?;
+        let filter = Filter::from_descriptor(self.serial, &descriptor)?;
         let signing_bytes = filter.to_signing_bytes()?;
         data_file.write_all(&signing_bytes)?;
         Ok(())
