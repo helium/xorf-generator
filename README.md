@@ -77,17 +77,17 @@ keys and edges.
 The signing data is the data that is signed by each member of the multisig and used as the source for all remaining commands.
 
 ```shell
-$ xorf-generator data generate
+$ xorf-generator data generate --serial 1
 ```
 
-Generates a `data.bin` file from the (implied) `descriptor.json` file.
+Generates a `data.bin` file from the (implied) `descriptor.json` file with a given embedded serial number.
 
 ### Generate a Manifest
 
 Generate a manifest for signing data and serial number:
 
 ```shell
-$ xorf-generator manifest generate  --serial 1 -f
+$ xorf-generator manifest generate -f
 ```
 
 which takes `descriptor.json` and a serial number for the final filter. data.
