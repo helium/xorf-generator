@@ -49,12 +49,21 @@ impl Filter {
         let mut data = Vec::new();
         file.read_to_end(&mut data)?;
 
-        let filter = Filter::from_bytes(&data)?;
+        let filter = Self::from_bytes(&data)?;
+        Ok(filter)
+    }
+
+    pub fn from_signing_path<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let mut file = File::open(path)?;
+        let mut data = Vec::new();
+        file.read_to_end(&mut data)?;
+
+        let filter = Self::from_signing_bytes(&data)?;
         Ok(filter)
     }
 
     pub fn hash(&self) -> Result<Vec<u8>> {
-        let bytes = self.signing_bytes()?;
+        let bytes = self.to_signing_bytes()?;
         Ok(Sha256::digest(&bytes).to_vec())
     }
 
@@ -67,17 +76,29 @@ impl Filter {
     }
 
     pub fn verify(&self, public_key: &PublicKey) -> Result {
-        let msg = self.signing_bytes()?;
+        let msg = self.to_signing_bytes()?;
         public_key.verify(&msg, &self.signature)?;
         Ok(())
     }
 
-    pub fn signing_bytes(&self) -> Result<Vec<u8>> {
+    pub fn to_signing_bytes(&self) -> Result<Vec<u8>> {
         let mut buf = BytesMut::new();
         buf.put_u32_le(self.serial);
         let filter_bin = bincode::serialize(&self.filter)?;
         buf.extend_from_slice(&filter_bin);
         Ok(buf.to_vec())
+    }
+
+    pub fn from_signing_bytes<D: AsRef<[u8]>>(data: D) -> Result<Self> {
+        let mut buf = data.as_ref();
+        let serial = buf.get_u32_le();
+        let filter = bincode::deserialize(buf)?;
+        Ok(Self {
+            version: VERSION,
+            signature: vec![],
+            serial,
+            filter,
+        })
     }
 
     pub fn from_bytes<D: AsRef<[u8]>>(data: D) -> Result<Self> {
@@ -100,7 +121,7 @@ impl Filter {
         buf.put_u8(self.version);
         buf.put_u16_le(self.signature.len() as u16);
         buf.extend_from_slice(&self.signature);
-        buf.extend_from_slice(&self.signing_bytes()?);
+        buf.extend_from_slice(&self.to_signing_bytes()?);
         Ok(buf.to_vec())
     }
 }
