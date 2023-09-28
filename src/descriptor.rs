@@ -138,15 +138,10 @@ impl Descriptor {
                     edge_nodes.insert(edge);
                 }
             } else {
-                if !nodes.contains(&Node {
-                    key: row.public_key.clone(),
-                    reason: None,
-                }) {
-                    nodes.insert(Node {
-                        key: row.public_key,
-                        reason: row.reason,
-                    });
-                }
+                nodes.insert(Node {
+                    key: row.public_key,
+                    reason: row.reason,
+                });
             }
         }
 
