@@ -1,6 +1,8 @@
-use crate::{cmd::open_output_file, Descriptor, Result};
+use crate::{
+    cmd::{open_output_file, print_json},
+    Descriptor, Result,
+};
 use helium_crypto::PublicKey;
-use serde::Serialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -30,11 +32,6 @@ impl DescriptorCommand {
             Self::CountEdges(cmd) => cmd.run(),
         }
     }
-}
-#[derive(Serialize)]
-struct Row {
-    key: PublicKey,
-    count: i32,
 }
 
 /// Generate a descriptor file for the given csv file
@@ -86,16 +83,6 @@ impl CountEdges {
                 .or_insert(1);
         }
 
-        // Write the filtered results to out_csv
-        let mut wtr = csv::WriterBuilder::new()
-            .flexible(true)
-            .has_headers(false)
-            .from_path(&self.output)?;
-
-        for (key, count) in counts {
-            wtr.serialize(Row { key, count })?;
-        }
-
-        Ok(())
+        print_json(&counts)
     }
 }
