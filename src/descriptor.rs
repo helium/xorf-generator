@@ -117,8 +117,10 @@ impl Descriptor {
             .has_headers(false)
             .from_reader(File::open(path)?);
         let mut nodes = IndexSet::new();
+        let mut node_keys = IndexSet::new();
         let mut edge_nodes: IndexSet<EdgeNode> = IndexSet::new();
         let mut edge_keys: IndexSet<PublicKey> = IndexSet::new();
+        let mut edge_pairs: IndexSet<(PublicKey, PublicKey)> = IndexSet::new();
 
         for record in rdr.deserialize() {
             let row: CsvRow = record?;
@@ -126,14 +128,20 @@ impl Descriptor {
                 // we enforce edge order here to dedupe two way edges.
                 let (source, target) = edge_order(&row.public_key, &target_key);
                 let edge = EdgeNode::new(source.clone(), target.clone(), row.reason);
-                edge_keys.insert(edge.source.clone());
-                edge_keys.insert(edge.target.clone());
-                edge_nodes.insert(edge);
+                if ! (node_keys.contains(&edge.source) || node_keys.contains(&edge.target)) || edge_pairs.contains(&(source.clone(), target.clone())) {
+                    edge_keys.insert(edge.source.clone());
+                    edge_keys.insert(edge.target.clone());
+                    edge_nodes.insert(edge);
+                    edge_pairs.insert((source.clone(), target.clone()));
+                }
             } else {
-                nodes.insert(Node {
-                    key: row.public_key,
-                    reason: row.reason,
-                });
+                if ! node_keys.contains(&row.public_key) {
+                    node_keys.insert(row.public_key.clone());
+                    nodes.insert(Node {
+                        key: row.public_key,
+                        reason: row.reason,
+                    });
+                }
             }
         }
 
