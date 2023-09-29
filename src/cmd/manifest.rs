@@ -121,9 +121,6 @@ impl Verify {
         if !hash_verified {
             anyhow::bail!("Filter hash does not match manifest hash");
         }
-        if filter.serial != manifest.serial {
-            anyhow::bail!("Filter serial does not match manifest serial");
-        }
         let signtatures: Vec<ManifestSignatureVerify> = manifest
             .signatures
             .iter()
