@@ -1,25 +1,61 @@
-use crate::{Descriptor, Result};
+use crate::{base64_serde, Descriptor, Error, Result};
 use bytes::{Buf, BufMut, BytesMut};
 use helium_crypto::{PublicKey, Verify};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{fs::File, hash::Hasher, io::Read, path::Path};
 use twox_hash::XxHash64;
-use xorf::{Filter as XorFilter, Xor32};
+use xorf::{BinaryFuse32, Filter as _, Xor32};
 
-pub const VERSION: u8 = 1;
+pub const VERSION: u8 = 2;
 
 #[derive(Serialize)]
 pub struct Filter {
     pub(crate) version: u8,
+    #[serde(with = "base64_serde")]
     pub(crate) signature: Vec<u8>,
     pub(crate) serial: u32,
     #[serde(skip_serializing)]
-    pub(crate) filter: Xor32,
+    pub(crate) filter: FilterData,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum FilterData {
+    V1(Xor32),
+    V2(BinaryFuse32),
+}
+
+impl From<Xor32> for FilterData {
+    fn from(filter: Xor32) -> Self {
+        Self::V1(filter)
+    }
+}
+
+impl From<BinaryFuse32> for FilterData {
+    fn from(filter: BinaryFuse32) -> Self {
+        Self::V2(filter)
+    }
+}
+
+impl FilterData {
+    pub fn contains(&self, hash: &u64) -> bool {
+        match self {
+            Self::V1(filter) => filter.contains(hash),
+            Self::V2(filter) => filter.contains(hash),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            Self::V1(filter) => filter.len(),
+            Self::V2(filter) => filter.len(),
+        }
+    }
 }
 
 impl Filter {
-    pub fn new(serial: u32, filter: Xor32) -> Result<Self> {
+    pub fn new<F: Into<FilterData>>(serial: u32, filter: F) -> Result<Self> {
+        let filter = filter.into();
         Ok(Self {
             version: VERSION,
             serial,
@@ -40,8 +76,8 @@ impl Filter {
         }
         hashes.sort_unstable();
         hashes.dedup();
-        let xor_filter = Xor32::try_from(&hashes)?;
-        Filter::new(serial, xor_filter)
+        let filter = BinaryFuse32::try_from(&hashes).map_err(Error::filter)?;
+        Filter::new(serial, filter)
     }
 
     pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
@@ -64,7 +100,7 @@ impl Filter {
 
     pub fn hash(&self) -> Result<Vec<u8>> {
         let bytes = self.to_signing_bytes()?;
-        Ok(Sha256::digest(&bytes).to_vec())
+        Ok(Sha256::digest(bytes).to_vec())
     }
 
     pub fn contains(&self, public_key: &PublicKey) -> bool {
@@ -101,15 +137,22 @@ impl Filter {
         })
     }
 
-    pub fn from_bytes<D: AsRef<[u8]>>(data: D) -> Result<Self> {
-        let mut buf = data.as_ref();
+    pub fn from_bytes(data: &[u8]) -> Result<Self> {
+        let mut buf = data;
         let version = buf.get_u8();
         let signature_len = buf.get_u16_le() as usize;
         let signature = buf.copy_to_bytes(signature_len).to_vec();
         let serial = buf.get_u32_le();
-        let filter = bincode::deserialize(buf)?;
+        let filter: FilterData = match version {
+            1 => {
+                let filter: Xor32 = bincode::deserialize(buf)?;
+                filter.into()
+            }
+            2 => bincode::deserialize(buf)?,
+            _ => return Err(Error::filter("Unsupported filter version")),
+        };
         Ok(Self {
-            version,
+            version: VERSION,
             signature,
             serial,
             filter,

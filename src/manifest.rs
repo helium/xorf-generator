@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::{base64_serde, Result};
 use helium_crypto::{multihash, multisig, Network, PublicKey, Verify};
 use serde::{Deserialize, Serialize};
 use std::{fs::File, io::BufReader, ops::Deref, path::Path};
@@ -65,7 +65,7 @@ impl PublicKeyManifest {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ManifestSignature {
     address: ManifestAddres,
-    #[serde(with = "base64")]
+    #[serde(with = "base64_serde")]
     signature: Vec<u8>,
 }
 
@@ -133,33 +133,5 @@ mod public_key {
         S: Serializer,
     {
         s.serialize_str(&public_key.to_string())
-    }
-}
-
-mod base64 {
-    use base64::{engine::general_purpose::STANDARD, Engine};
-    use serde::{de, Deserialize, Deserializer, Serializer};
-
-    pub fn deserialize<'de, D>(d: D) -> std::result::Result<Vec<u8>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let sig_string = String::deserialize(d)?;
-        if sig_string.is_empty() {
-            return Ok(vec![]);
-        }
-        STANDARD
-            .decode(sig_string)
-            .map_err(|err| de::Error::custom(format!("invalid base64: \"{}\"", err)))
-    }
-
-    pub fn serialize<S>(data: &[u8], s: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        if data.is_empty() {
-            return s.serialize_str("");
-        }
-        s.serialize_str(&STANDARD.encode(data))
     }
 }

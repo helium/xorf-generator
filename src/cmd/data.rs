@@ -1,4 +1,5 @@
-use crate::{cmd::open_output_file, Descriptor, Filter, Result};
+use crate::{cmd::open_output_file, Descriptor, Filter};
+use anyhow::{Context, Result};
 use std::{io::Write, path::PathBuf};
 
 #[derive(clap::Args, Debug)]
@@ -8,7 +9,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub fn run(&self) -> Result {
+    pub fn run(&self) -> Result<()> {
         self.cmd.run()
     }
 }
@@ -20,7 +21,7 @@ pub enum DataCommand {
 }
 
 impl DataCommand {
-    pub fn run(&self) -> Result {
+    pub fn run(&self) -> Result<()> {
         match self {
             Self::Generate(cmd) => cmd.run(),
         }
@@ -42,9 +43,10 @@ pub struct Generate {
 }
 
 impl Generate {
-    pub fn run(&self) -> Result {
+    pub fn run(&self) -> Result<()> {
         let mut data_file = open_output_file(&self.output, false)?;
-        let descriptor = Descriptor::from_json(&self.input)?;
+        let descriptor = Descriptor::from_json(&self.input)
+            .context(format!("reading descriptor {}", self.input.display()))?;
         let filter = Filter::from_descriptor(self.serial, &descriptor)?;
         let signing_bytes = filter.to_signing_bytes()?;
         data_file.write_all(&signing_bytes)?;
