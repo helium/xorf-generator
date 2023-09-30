@@ -1,8 +1,8 @@
 use crate::{
     cmd::{open_output_file, print_json},
-    Filter, Manifest, PublicKeyManifest, Result,
+    Filter, Manifest, PublicKeyManifest,
 };
-use anyhow::bail;
+use anyhow::{Context, Result};
 use helium_crypto::PublicKey;
 use serde_json::json;
 use std::{io::Write, path::PathBuf};
@@ -14,7 +14,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub fn run(&self) -> Result {
+    pub fn run(&self) -> Result<()> {
         self.cmd.run()
     }
 }
@@ -25,14 +25,16 @@ pub enum FilterCommand {
     Generate(Generate),
     Contains(Contains),
     Verify(Verify),
+    Info(Info),
 }
 
 impl FilterCommand {
-    pub fn run(&self) -> Result {
+    pub fn run(&self) -> Result<()> {
         match self {
             Self::Generate(cmd) => cmd.run(),
             Self::Contains(cmd) => cmd.run(),
             Self::Verify(cmd) => cmd.run(),
+            Self::Info(cmd) => cmd.run(),
         }
     }
 }
@@ -50,8 +52,9 @@ pub struct Contains {
 }
 
 impl Contains {
-    pub fn run(&self) -> Result {
-        let filter = Filter::from_path(&self.input)?;
+    pub fn run(&self) -> Result<()> {
+        let filter = Filter::from_path(&self.input)
+            .context(format!("reading filter {}", self.input.display()))?;
         let in_filter = if let Some(target) = &self.target {
             filter.contains_edge(&self.key, target)
         } else {
@@ -77,13 +80,15 @@ pub struct Verify {
 }
 
 impl Verify {
-    pub fn run(&self) -> Result {
-        let filter = Filter::from_path(&self.input)?;
-        let key_manifest = PublicKeyManifest::from_path(&self.key)?;
+    pub fn run(&self) -> Result<()> {
+        let filter = Filter::from_path(&self.input)
+            .context(format!("reading filter {}", self.input.display()))?;
+        let key_manifest = PublicKeyManifest::from_path(&self.key)
+            .context(format!("reading public key {}", self.key.display()))?;
         let key = key_manifest.public_key()?;
         let verified = filter.verify(&key).is_ok();
         if !verified {
-            bail!("Filter does not verify with key {key}");
+            anyhow::bail!("Filter does not verify");
         }
         print_verified(&key, verified)
     }
@@ -114,9 +119,11 @@ pub struct Generate {
 }
 
 impl Generate {
-    pub fn run(&self) -> Result {
-        let manifest = Manifest::from_path(&self.manifest)?;
-        let key_manifest = PublicKeyManifest::from_path(&self.key)?;
+    pub fn run(&self) -> Result<()> {
+        let manifest = Manifest::from_path(&self.manifest)
+            .context(format!("reading manifest {}", self.manifest.display()))?;
+        let key_manifest = PublicKeyManifest::from_path(&self.key)
+            .context(format!("reading public key {}", self.key.display()))?;
         let key = key_manifest.public_key()?;
 
         let mut filter = Filter::from_signing_path(&self.data)?;
@@ -128,13 +135,32 @@ impl Generate {
 
         let verified = filter.verify(&key).is_ok();
         if !verified {
-            bail!("Filter does not verify with key {key}");
+            anyhow::bail!("Filter does not verify");
         }
         print_verified(&key, verified)
     }
 }
 
-fn print_verified(public_key: &PublicKey, verified: bool) -> Result {
+/// Displays filter information for a given filter
+#[derive(clap::Args, Debug)]
+pub struct Info {
+    /// The input file to generate a filter for
+    #[arg(long, short, default_value = "filter.bin")]
+    input: PathBuf,
+}
+
+impl Info {
+    pub fn run(&self) -> Result<()> {
+        let filter = Filter::from_path(&self.input)
+            .context(format!("reading filter {}", self.input.display()))?;
+
+        let mut json = serde_json::to_value(&filter)?;
+        json["version"] = filter.version.into();
+        print_json(&filter)
+    }
+}
+
+fn print_verified(public_key: &PublicKey, verified: bool) -> Result<()> {
     let json = json!({
         "address":  public_key.to_string(),
         "verified": verified,

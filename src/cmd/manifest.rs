@@ -2,8 +2,9 @@ use crate::{
     cmd::{open_output_file, print_json},
     filter::Filter,
     manifest::{ManifestSignature, ManifestSignatureVerify},
-    Manifest, PublicKeyManifest, Result,
+    Manifest, PublicKeyManifest,
 };
+use anyhow::{Context, Result};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::json;
 use std::path::PathBuf;
@@ -15,7 +16,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub fn run(&self) -> Result {
+    pub fn run(&self) -> Result<()> {
         self.cmd.run()
     }
 }
@@ -28,7 +29,7 @@ pub enum ManifestCommand {
 }
 
 impl ManifestCommand {
-    pub fn run(&self) -> Result {
+    pub fn run(&self) -> Result<()> {
         match self {
             Self::Generate(cmd) => cmd.run(),
             Self::Verify(cmd) => cmd.run(),
@@ -62,10 +63,13 @@ pub struct Generate {
 }
 
 impl Generate {
-    pub fn run(&self) -> Result {
-        let filter = Filter::from_signing_path(&self.data)?;
+    pub fn run(&self) -> Result<()> {
+        let filter = Filter::from_signing_path(&self.data)
+            .context(format!("reading filter {}", self.data.display()))?;
+
         let filter_hash = filter.hash()?;
-        let key_manifest = PublicKeyManifest::from_path(&self.key)?;
+        let key_manifest = PublicKeyManifest::from_path(&self.key)
+            .context(format!("reading public key {}", self.key.display()))?;
         let signatures = key_manifest
             .public_keys
             .iter()
@@ -107,13 +111,16 @@ pub struct Verify {
 }
 
 impl Verify {
-    pub fn run(&self) -> Result {
-        let manifest = Manifest::from_path(&self.manifest)?;
+    pub fn run(&self) -> Result<()> {
+        let manifest = Manifest::from_path(&self.manifest)
+            .context(format!("reading manifest {}", self.manifest.display()))?;
         let manifest_hash = STANDARD.decode(&manifest.hash)?;
-        let key_manifest = PublicKeyManifest::from_path(&self.key)?;
+        let key_manifest = PublicKeyManifest::from_path(&self.key)
+            .context(format!("reading public key {}", self.key.display()))?;
         let key = key_manifest.public_key()?;
 
-        let filter = Filter::from_signing_path(&self.data)?;
+        let filter = Filter::from_signing_path(&self.data)
+            .context(format!("reading filter {}", self.data.display()))?;
         let filter_hash = filter.hash()?;
         let signing_bytes = filter.to_signing_bytes()?;
 
