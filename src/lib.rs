@@ -27,7 +27,7 @@ impl Error {
 }
 
 mod filter;
-pub use filter::Filter;
+pub use filter::{edge_hash, edge_order, public_key_hash, Filter};
 
 mod manifest;
 pub use manifest::{Manifest, PublicKeyManifest};

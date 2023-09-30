@@ -169,13 +169,13 @@ impl Filter {
     }
 }
 
-fn public_key_hash(public_key: &PublicKey) -> u64 {
+pub fn public_key_hash(public_key: &PublicKey) -> u64 {
     let mut hasher = XxHash64::default();
     hasher.write(&public_key.to_vec());
     hasher.finish()
 }
 
-pub(crate) fn edge_order<'a>(a: &'a PublicKey, b: &'a PublicKey) -> (&'a PublicKey, &'a PublicKey) {
+pub fn edge_order<'a>(a: &'a PublicKey, b: &'a PublicKey) -> (&'a PublicKey, &'a PublicKey) {
     if a < b {
         (a, b)
     } else {
@@ -183,7 +183,7 @@ pub(crate) fn edge_order<'a>(a: &'a PublicKey, b: &'a PublicKey) -> (&'a PublicK
     }
 }
 
-pub(crate) fn edge_hash(a: &PublicKey, b: &PublicKey) -> u64 {
+pub fn edge_hash(a: &PublicKey, b: &PublicKey) -> u64 {
     let (a, b) = edge_order(a, b);
     let mut hasher = XxHash64::default();
     hasher.write(&a.to_vec());

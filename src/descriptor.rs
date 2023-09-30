@@ -1,4 +1,4 @@
-use crate::{filter::edge_order, Result};
+use crate::{edge_order, Result};
 use helium_crypto::PublicKey;
 use indexmap::IndexSet;
 use serde::{Deserialize, Serialize};
