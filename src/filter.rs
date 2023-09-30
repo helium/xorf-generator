@@ -68,6 +68,10 @@ impl Filter {
         self.filter.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.filter.len() == 0
+    }
+
     pub fn from_descriptor(serial: u32, descriptor: &Descriptor) -> Result<Self> {
         let mut hashes: Vec<u64> = Vec::new();
         for node in &descriptor.nodes {
