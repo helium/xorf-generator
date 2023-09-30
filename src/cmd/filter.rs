@@ -155,8 +155,8 @@ impl Info {
             .context(format!("reading filter {}", self.input.display()))?;
 
         let mut json = serde_json::to_value(&filter)?;
-        json["version"] = filter.version.into();
-        print_json(&filter)
+        json["fingerprints"] = filter.filter.len().into();
+        print_json(&json)
     }
 }
 

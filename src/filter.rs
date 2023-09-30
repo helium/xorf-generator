@@ -44,6 +44,13 @@ impl FilterData {
             Self::V2(filter) => filter.contains(hash),
         }
     }
+
+    pub fn len(&self) -> usize {
+        match self {
+            Self::V1(filter) => filter.len(),
+            Self::V2(filter) => filter.len(),
+        }
+    }
 }
 
 impl Filter {
