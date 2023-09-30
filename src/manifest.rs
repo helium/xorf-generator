@@ -5,9 +5,9 @@ use std::{fs::File, io::BufReader, ops::Deref, path::Path};
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Manifest {
-    pub(crate) serial: u32,
-    pub(crate) hash: String,
-    pub(crate) signatures: Vec<ManifestSignature>,
+    pub serial: u32,
+    pub hash: String,
+    pub signatures: Vec<ManifestSignature>,
 }
 
 impl Manifest {
@@ -34,8 +34,8 @@ impl Manifest {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PublicKeyManifest {
-    pub(crate) public_keys: Vec<ManifestAddres>,
-    pub(crate) required: u8,
+    pub public_keys: Vec<ManifestAddres>,
+    pub required: u8,
 }
 
 impl PublicKeyManifest {

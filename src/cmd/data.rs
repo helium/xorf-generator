@@ -1,6 +1,7 @@
-use crate::{cmd::open_output_file, Descriptor, Filter};
+use crate::cmd::open_output_file;
 use anyhow::{Context, Result};
 use std::{io::Write, path::PathBuf};
+use xorf_generator::{Descriptor, Filter};
 
 #[derive(clap::Args, Debug)]
 pub struct Cmd {

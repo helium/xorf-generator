@@ -1,13 +1,11 @@
-use crate::{
-    cmd::{open_output_file, print_json},
-    filter::Filter,
-    manifest::{ManifestSignature, ManifestSignatureVerify},
-    Manifest, PublicKeyManifest,
-};
+use crate::cmd::{open_output_file, print_json};
 use anyhow::{Context, Result};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::json;
 use std::path::PathBuf;
+use xorf_generator::{
+    Filter, Manifest, ManifestSignature, ManifestSignatureVerify, PublicKeyManifest,
+};
 
 #[derive(clap::Args, Debug)]
 pub struct Cmd {

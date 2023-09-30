@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use xorf_generator::cmd;
+mod cmd;
 
 #[derive(Debug, Parser)]
 #[command(version = env!("CARGO_PKG_VERSION"))]

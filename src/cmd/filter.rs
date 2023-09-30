@@ -1,11 +1,9 @@
-use crate::{
-    cmd::{open_output_file, print_json},
-    Filter, Manifest, PublicKeyManifest,
-};
+use crate::cmd::{open_output_file, print_json};
 use anyhow::{Context, Result};
 use helium_crypto::PublicKey;
 use serde_json::json;
 use std::{io::Write, path::PathBuf};
+use xorf_generator::{Filter, Manifest, PublicKeyManifest};
 
 #[derive(clap::Args, Debug)]
 pub struct Cmd {
@@ -55,10 +53,11 @@ impl Contains {
     pub fn run(&self) -> Result<()> {
         let filter = Filter::from_path(&self.input)
             .context(format!("reading filter {}", self.input.display()))?;
-        let in_filter = if let Some(target) = &self.target {
-            filter.contains_edge(&self.key, target)
+        let source = self.key.clone().into();
+        let in_filter = if let Some(target) = self.target.clone() {
+            filter.contains_edge(&source, &target.into())
         } else {
-            filter.contains(&self.key)
+            filter.contains(&source)
         };
         let json = json!({
             "address":  self.key.to_string(),
@@ -155,7 +154,7 @@ impl Info {
             .context(format!("reading filter {}", self.input.display()))?;
 
         let mut json = serde_json::to_value(&filter)?;
-        json["fingerprints"] = filter.filter.len().into();
+        json["fingerprints"] = filter.len().into();
         print_json(&json)
     }
 }

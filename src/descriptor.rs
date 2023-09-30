@@ -1,5 +1,5 @@
 use crate::{edge_order, Result};
-use helium_crypto::PublicKey;
+use helium_crypto::PublicKeyBinary;
 use indexmap::IndexSet;
 use serde::{Deserialize, Serialize};
 use std::{fs::File, path::Path};
@@ -12,7 +12,7 @@ pub struct Descriptor {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Edges {
-    pub keys: IndexSet<PublicKey>,
+    pub keys: IndexSet<PublicKeyBinary>,
     pub edges: Vec<Edge>,
 }
 
@@ -25,7 +25,7 @@ pub struct Edge {
 
 #[derive(Debug, Deserialize, Serialize, Eq)]
 pub struct Node {
-    pub key: PublicKey,
+    pub key: PublicKeyBinary,
     pub reason: Option<String>,
 }
 
@@ -58,15 +58,15 @@ impl Ord for Node {
 //
 #[derive(Debug, Deserialize)]
 struct CsvRow {
-    pub public_key: PublicKey,
-    pub target_key: Option<PublicKey>,
+    pub public_key: PublicKeyBinary,
+    pub target_key: Option<PublicKeyBinary>,
     pub reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Eq)]
 struct EdgeNode {
-    source: PublicKey,
-    target: PublicKey,
+    source: PublicKeyBinary,
+    target: PublicKeyBinary,
     reason: Option<String>,
 }
 
@@ -96,7 +96,7 @@ impl Ord for EdgeNode {
 }
 
 impl EdgeNode {
-    pub fn new(source: PublicKey, target: PublicKey, reason: Option<String>) -> Self {
+    pub fn new(source: PublicKeyBinary, target: PublicKeyBinary, reason: Option<String>) -> Self {
         Self {
             source,
             target,
@@ -118,7 +118,7 @@ impl Descriptor {
             .from_reader(File::open(path)?);
         let mut nodes = IndexSet::new();
         let mut edge_nodes: IndexSet<EdgeNode> = IndexSet::new();
-        let mut edge_keys: IndexSet<PublicKey> = IndexSet::new();
+        let mut edge_keys: IndexSet<PublicKeyBinary> = IndexSet::new();
 
         for record in rdr.deserialize() {
             let row: CsvRow = record?;

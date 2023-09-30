@@ -1,10 +1,8 @@
-use crate::{
-    cmd::{open_output_file, print_json},
-    Descriptor,
-};
+use crate::cmd::{open_output_file, print_json};
 use anyhow::{Context, Result};
-use helium_crypto::PublicKey;
+use helium_crypto::PublicKeyBinary;
 use std::{collections::HashMap, path::PathBuf};
+use xorf_generator::Descriptor;
 
 #[derive(clap::Args, Debug)]
 pub struct Cmd {
@@ -68,7 +66,7 @@ impl CountEdges {
     pub fn run(&self) -> Result<()> {
         let descriptor = Descriptor::from_json(&self.input)
             .context(format!("reading descriptor {}", self.input.display()))?;
-        let mut counts: HashMap<&PublicKey, i32> = HashMap::new();
+        let mut counts: HashMap<&PublicKeyBinary, i32> = HashMap::new();
         for node in &descriptor.nodes {
             counts.insert(&node.key, -1); // -1 denotes all edges
         }

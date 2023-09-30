@@ -1,5 +1,3 @@
-pub mod cmd;
-
 pub type Result<T = ()> = std::result::Result<T, Error>;
 
 #[derive(Debug, thiserror::Error)]
@@ -30,10 +28,14 @@ mod filter;
 pub use filter::{edge_hash, edge_order, public_key_hash, Filter};
 
 mod manifest;
-pub use manifest::{Manifest, PublicKeyManifest};
+pub use manifest::{
+    Manifest, ManifestAddres, ManifestSignature, ManifestSignatureVerify, PublicKeyManifest,
+};
 
 mod descriptor;
 pub use descriptor::{Descriptor, Edges};
+
+pub use xorf;
 
 pub mod base64_serde {
     use base64::{engine::general_purpose::STANDARD, Engine};

@@ -1,6 +1,6 @@
 use crate::{base64_serde, Descriptor, Error, Result};
 use bytes::{Buf, BufMut, BytesMut};
-use helium_crypto::{PublicKey, Verify};
+use helium_crypto::{PublicKey, PublicKeyBinary, Verify};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{fs::File, hash::Hasher, io::Read, path::Path};
@@ -11,12 +11,12 @@ pub const VERSION: u8 = 2;
 
 #[derive(Serialize)]
 pub struct Filter {
-    pub(crate) version: u8,
+    pub version: u8,
     #[serde(with = "base64_serde")]
-    pub(crate) signature: Vec<u8>,
-    pub(crate) serial: u32,
+    pub signature: Vec<u8>,
+    pub serial: u32,
     #[serde(skip_serializing)]
-    pub(crate) filter: FilterData,
+    pub filter: FilterData,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -64,6 +64,10 @@ impl Filter {
         })
     }
 
+    pub fn len(&self) -> usize {
+        self.filter.len()
+    }
+
     pub fn from_descriptor(serial: u32, descriptor: &Descriptor) -> Result<Self> {
         let mut hashes: Vec<u64> = Vec::new();
         for node in &descriptor.nodes {
@@ -99,15 +103,15 @@ impl Filter {
     }
 
     pub fn hash(&self) -> Result<Vec<u8>> {
-        let bytes = self.to_signing_bytes()?;
+        let bytes = &self.to_signing_bytes()?;
         Ok(Sha256::digest(bytes).to_vec())
     }
 
-    pub fn contains(&self, public_key: &PublicKey) -> bool {
+    pub fn contains(&self, public_key: &PublicKeyBinary) -> bool {
         self.filter.contains(&public_key_hash(public_key))
     }
 
-    pub fn contains_edge(&self, source: &PublicKey, target: &PublicKey) -> bool {
+    pub fn contains_edge(&self, source: &PublicKeyBinary, target: &PublicKeyBinary) -> bool {
         self.filter.contains(&edge_hash(source, target))
     }
 
@@ -169,13 +173,16 @@ impl Filter {
     }
 }
 
-pub fn public_key_hash(public_key: &PublicKey) -> u64 {
+pub fn public_key_hash(public_key: &PublicKeyBinary) -> u64 {
     let mut hasher = XxHash64::default();
-    hasher.write(&public_key.to_vec());
+    hasher.write(public_key.as_ref());
     hasher.finish()
 }
 
-pub fn edge_order<'a>(a: &'a PublicKey, b: &'a PublicKey) -> (&'a PublicKey, &'a PublicKey) {
+pub fn edge_order<'a>(
+    a: &'a PublicKeyBinary,
+    b: &'a PublicKeyBinary,
+) -> (&'a PublicKeyBinary, &'a PublicKeyBinary) {
     if a < b {
         (a, b)
     } else {
@@ -183,10 +190,10 @@ pub fn edge_order<'a>(a: &'a PublicKey, b: &'a PublicKey) -> (&'a PublicKey, &'a
     }
 }
 
-pub fn edge_hash(a: &PublicKey, b: &PublicKey) -> u64 {
+pub fn edge_hash(a: &PublicKeyBinary, b: &PublicKeyBinary) -> u64 {
     let (a, b) = edge_order(a, b);
     let mut hasher = XxHash64::default();
-    hasher.write(&a.to_vec());
-    hasher.write(&b.to_vec());
+    hasher.write(a.as_ref());
+    hasher.write(b.as_ref());
     hasher.finish()
 }
