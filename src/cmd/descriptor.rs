@@ -63,10 +63,6 @@ pub struct CountEdges {
 }
 
 impl CountEdges {
-    pub fn new(input: PathBuf, output: PathBuf) -> Self {
-        Self { input, output }
-    }
-
     pub fn run(&self) -> Result<()> {
         let descriptor = Descriptor::from_json(&self.input)
             .context(format!("reading descriptor {}", self.input.display()))?;
