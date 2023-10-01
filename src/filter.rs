@@ -112,7 +112,7 @@ impl Filter {
         }
         hashes.sort_unstable();
         hashes.dedup();
-        let filter = BinaryFuse32::try_from(&hashes).map_err(Error::filter)?;
+        let filter = Xor32::from(&hashes);
         Filter::new(serial, filter)
     }
 
