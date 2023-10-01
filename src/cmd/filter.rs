@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use helium_crypto::PublicKey;
 use serde_json::json;
 use std::{io::Write, path::PathBuf};
-use xorf_generator::{Filter, Manifest, PublicKeyManifest};
+use xorf_generator::{base64_serde, Filter, Manifest, PublicKeyManifest, FILTTER_VERSION};
 
 #[derive(clap::Args, Debug)]
 pub struct Cmd {
@@ -125,7 +125,7 @@ impl Generate {
             .context(format!("reading public key {}", self.key.display()))?;
         let key = key_manifest.public_key()?;
 
-        let mut filter = Filter::from_signing_path(&self.data)?;
+        let mut filter = Filter::from_signing_path(&self.data, FILTTER_VERSION)?;
         filter.signature = manifest.sign(&key_manifest)?;
         filter.serial = manifest.serial;
         let filter_bytes = filter.to_bytes()?;
@@ -155,6 +155,7 @@ impl Info {
 
         let mut json = serde_json::to_value(&filter)?;
         json["fingerprints"] = filter.len().into();
+        json["hash"] = base64_serde::encode(&filter.hash()?).into();
         print_json(&json)
     }
 }

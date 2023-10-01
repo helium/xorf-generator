@@ -5,6 +5,7 @@ use serde_json::json;
 use std::path::PathBuf;
 use xorf_generator::{
     Filter, Manifest, ManifestSignature, ManifestSignatureVerify, PublicKeyManifest,
+    FILTTER_VERSION,
 };
 
 #[derive(clap::Args, Debug)]
@@ -62,7 +63,7 @@ pub struct Generate {
 
 impl Generate {
     pub fn run(&self) -> Result<()> {
-        let filter = Filter::from_signing_path(&self.data)
+        let filter = Filter::from_signing_path(&self.data, FILTTER_VERSION)
             .context(format!("reading filter {}", self.data.display()))?;
 
         let filter_hash = filter.hash()?;
@@ -117,7 +118,7 @@ impl Verify {
             .context(format!("reading public key {}", self.key.display()))?;
         let key = key_manifest.public_key()?;
 
-        let filter = Filter::from_signing_path(&self.data)
+        let filter = Filter::from_signing_path(&self.data, FILTTER_VERSION)
             .context(format!("reading filter {}", self.data.display()))?;
         let filter_hash = filter.hash()?;
         let signing_bytes = filter.to_signing_bytes()?;

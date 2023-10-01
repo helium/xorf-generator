@@ -7,7 +7,7 @@ use std::{fs::File, hash::Hasher, io::Read, path::Path};
 use twox_hash::XxHash64;
 use xorf::{BinaryFuse32, Filter as _, Xor32};
 
-pub const VERSION: u8 = 2;
+pub const FILTTER_VERSION: u8 = 2;
 
 #[derive(Serialize)]
 pub struct Filter {
@@ -51,13 +51,41 @@ impl FilterData {
             Self::V2(filter) => filter.len(),
         }
     }
+
+    pub fn to_signing_bytes(&self, version: u8) -> Result<Vec<u8>> {
+        match version {
+            1 => {
+                if let Self::V1(data) = self {
+                    Ok(bincode::serialize(data)?)
+                } else {
+                    Err(Error::filter("Unsupported filter version"))
+                }
+            }
+            2 => Ok(bincode::serialize(self)?),
+            _ => Err(Error::filter("Unsupported filter version")),
+        }
+    }
+
+    pub fn from_signing_bytes(data: &[u8], version: u8) -> Result<Self> {
+        match version {
+            1 => {
+                let filter: Xor32 = bincode::deserialize(data)?;
+                Ok(Self::V1(filter))
+            }
+            2 => {
+                let filter: BinaryFuse32 = bincode::deserialize(data)?;
+                Ok(Self::V2(filter))
+            }
+            _ => Err(Error::filter("Unsupported filter version")),
+        }
+    }
 }
 
 impl Filter {
     pub fn new<F: Into<FilterData>>(serial: u32, filter: F) -> Result<Self> {
         let filter = filter.into();
         Ok(Self {
-            version: VERSION,
+            version: FILTTER_VERSION,
             serial,
             signature: vec![],
             filter,
@@ -97,12 +125,12 @@ impl Filter {
         Ok(filter)
     }
 
-    pub fn from_signing_path<P: AsRef<Path>>(path: P) -> Result<Self> {
+    pub fn from_signing_path(path: &Path, version: u8) -> Result<Self> {
         let mut file = File::open(path)?;
         let mut data = Vec::new();
         file.read_to_end(&mut data)?;
 
-        let filter = Self::from_signing_bytes(&data)?;
+        let filter = Self::from_signing_bytes(&data, version)?;
         Ok(filter)
     }
 
@@ -128,20 +156,20 @@ impl Filter {
     pub fn to_signing_bytes(&self) -> Result<Vec<u8>> {
         let mut buf = BytesMut::new();
         buf.put_u32_le(self.serial);
-        let filter_bin = bincode::serialize(&self.filter)?;
-        buf.extend_from_slice(&filter_bin);
+        let filter_data = self.filter.to_signing_bytes(self.version)?;
+        buf.extend_from_slice(&filter_data);
         Ok(buf.to_vec())
     }
 
-    pub fn from_signing_bytes<D: AsRef<[u8]>>(data: D) -> Result<Self> {
-        let mut buf = data.as_ref();
+    pub fn from_signing_bytes(data: &[u8], version: u8) -> Result<Self> {
+        let mut buf = data;
         let serial = buf.get_u32_le();
-        let filter = bincode::deserialize(buf)?;
+        let filter_data = FilterData::from_signing_bytes(buf, version)?;
         Ok(Self {
-            version: VERSION,
+            version,
             signature: vec![],
             serial,
-            filter,
+            filter: filter_data,
         })
     }
 
@@ -150,21 +178,10 @@ impl Filter {
         let version = buf.get_u8();
         let signature_len = buf.get_u16_le() as usize;
         let signature = buf.copy_to_bytes(signature_len).to_vec();
-        let serial = buf.get_u32_le();
-        let filter: FilterData = match version {
-            1 => {
-                let filter: Xor32 = bincode::deserialize(buf)?;
-                filter.into()
-            }
-            2 => bincode::deserialize(buf)?,
-            _ => return Err(Error::filter("Unsupported filter version")),
-        };
-        Ok(Self {
-            version: VERSION,
-            signature,
-            serial,
-            filter,
-        })
+        let mut filter = Self::from_signing_bytes(buf, version)?;
+        filter.signature = signature;
+        filter.version = version;
+        Ok(filter)
     }
 
     pub fn to_bytes(&self) -> Result<Vec<u8>> {

@@ -25,7 +25,7 @@ impl Error {
 }
 
 mod filter;
-pub use filter::{edge_hash, edge_order, public_key_hash, Filter};
+pub use filter::{edge_hash, edge_order, public_key_hash, Filter, FILTTER_VERSION};
 
 mod manifest;
 pub use manifest::{
@@ -61,6 +61,10 @@ pub mod base64_serde {
         if data.is_empty() {
             return s.serialize_str("");
         }
-        s.serialize_str(&STANDARD.encode(data))
+        s.serialize_str(&encode(data))
+    }
+
+    pub fn encode(data: &[u8]) -> String {
+        STANDARD.encode(data)
     }
 }
