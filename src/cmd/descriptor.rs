@@ -1,4 +1,4 @@
-use crate::cmd::{open_output_file, print_json};
+use crate::cmd::open_output_file;
 use anyhow::{Context, Result};
 use helium_crypto::PublicKeyBinary;
 use std::{collections::HashMap, path::PathBuf};
@@ -57,12 +57,16 @@ pub struct CountEdges {
     /// The input descriptor file to generate signing bytes for
     #[arg(default_value = "descriptor.json")]
     input: PathBuf,
-    /// The file to write the resulting signing bytes to
-    #[arg(default_value = "edgecount.csv")]
+    /// The file to write the resulting edgecounts to
+    #[arg(default_value = "edgecount.json")]
     output: PathBuf,
 }
 
 impl CountEdges {
+    pub fn new(input: PathBuf, output: PathBuf) -> Self {
+        Self { input, output }
+    }
+
     pub fn run(&self) -> Result<()> {
         let descriptor = Descriptor::from_json(&self.input)
             .context(format!("reading descriptor {}", self.input.display()))?;
@@ -83,6 +87,8 @@ impl CountEdges {
                 .or_insert(1);
         }
 
-        print_json(&counts)
+        let file = open_output_file(&self.output, false)?;
+        serde_json::to_writer_pretty(file, &counts)?;
+        Ok(())
     }
 }
