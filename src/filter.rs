@@ -21,41 +21,41 @@ pub struct Filter {
 
 #[derive(Serialize, Deserialize)]
 pub enum FilterData {
-    V1(Xor32),
-    V2(BinaryFuse32),
+    Xor(Xor32),
+    BFuse(BinaryFuse32),
 }
 
 impl From<Xor32> for FilterData {
     fn from(filter: Xor32) -> Self {
-        Self::V1(filter)
+        Self::Xor(filter)
     }
 }
 
 impl From<BinaryFuse32> for FilterData {
     fn from(filter: BinaryFuse32) -> Self {
-        Self::V2(filter)
+        Self::BFuse(filter)
     }
 }
 
 impl FilterData {
     pub fn contains(&self, hash: &u64) -> bool {
         match self {
-            Self::V1(filter) => filter.contains(hash),
-            Self::V2(filter) => filter.contains(hash),
+            Self::Xor(filter) => filter.contains(hash),
+            Self::BFuse(filter) => filter.contains(hash),
         }
     }
 
     pub fn len(&self) -> usize {
         match self {
-            Self::V1(filter) => filter.len(),
-            Self::V2(filter) => filter.len(),
+            Self::Xor(filter) => filter.len(),
+            Self::BFuse(filter) => filter.len(),
         }
     }
 
     pub fn to_signing_bytes(&self, version: u8) -> Result<Vec<u8>> {
         match version {
             1 => {
-                if let Self::V1(data) = self {
+                if let Self::Xor(data) = self {
                     Ok(bincode::serialize(data)?)
                 } else {
                     Err(Error::filter("Unsupported filter version"))
@@ -70,11 +70,11 @@ impl FilterData {
         match version {
             1 => {
                 let filter: Xor32 = bincode::deserialize(data)?;
-                Ok(Self::V1(filter))
+                Ok(Self::Xor(filter))
             }
             2 => {
-                let filter: BinaryFuse32 = bincode::deserialize(data)?;
-                Ok(Self::V2(filter))
+                let filter: Self = bincode::deserialize(data)?;
+                Ok(filter)
             }
             _ => Err(Error::filter("Unsupported filter version")),
         }
