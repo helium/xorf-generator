@@ -49,9 +49,7 @@ pub mod base64_serde {
         if sig_string.is_empty() {
             return Ok(vec![]);
         }
-        STANDARD
-            .decode(sig_string)
-            .map_err(|err| de::Error::custom(format!("invalid base64: \"{}\"", err)))
+        decode(&sig_string).map_err(|err| de::Error::custom(format!("invalid base64: \"{}\"", err)))
     }
 
     pub fn serialize<S>(data: &[u8], s: S) -> std::result::Result<S::Ok, S::Error>
@@ -66,5 +64,9 @@ pub mod base64_serde {
 
     pub fn encode(data: &[u8]) -> String {
         STANDARD.encode(data)
+    }
+
+    pub fn decode(str: &str) -> std::result::Result<Vec<u8>, base64::DecodeError> {
+        STANDARD.decode(str)
     }
 }

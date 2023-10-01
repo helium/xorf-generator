@@ -1,10 +1,9 @@
 use crate::cmd::{open_output_file, print_json};
 use anyhow::{Context, Result};
-use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::json;
 use std::path::PathBuf;
 use xorf_generator::{
-    Filter, Manifest, ManifestSignature, ManifestSignatureVerify, PublicKeyManifest,
+    base64_serde, Filter, Manifest, ManifestSignature, ManifestSignatureVerify, PublicKeyManifest,
     FILTTER_VERSION,
 };
 
@@ -78,7 +77,7 @@ impl Generate {
         let mut manifest_file = open_output_file(&self.manifest, !self.force)?;
         let manifest = Manifest {
             serial: filter.serial,
-            hash: STANDARD.encode(filter_hash),
+            hash: base64_serde::encode(&filter_hash),
             signatures,
         };
         serde_json::to_writer_pretty(&mut manifest_file, &manifest)?;
@@ -113,7 +112,7 @@ impl Verify {
     pub fn run(&self) -> Result<()> {
         let manifest = Manifest::from_path(&self.manifest)
             .context(format!("reading manifest {}", self.manifest.display()))?;
-        let manifest_hash = STANDARD.decode(&manifest.hash)?;
+        let manifest_hash = base64_serde::decode(&manifest.hash)?;
         let key_manifest = PublicKeyManifest::from_path(&self.key)
             .context(format!("reading public key {}", self.key.display()))?;
         let key = key_manifest.public_key()?;
@@ -125,7 +124,11 @@ impl Verify {
 
         let hash_verified = manifest_hash == filter_hash;
         if !hash_verified {
-            anyhow::bail!("Filter hash does not match manifest hash");
+            anyhow::bail!(format!(
+                "Filter hash {} does not match manifest hash {}",
+                base64_serde::encode(&filter_hash),
+                manifest.hash
+            ));
         }
         let signtatures: Vec<ManifestSignatureVerify> = manifest
             .signatures
