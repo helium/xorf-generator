@@ -102,13 +102,17 @@ impl Filter {
 
     pub fn from_descriptor(serial: u32, descriptor: &Descriptor) -> Result<Self> {
         let mut hashes: Vec<u64> = Vec::new();
+
         for node in &descriptor.nodes {
-            hashes.push(public_key_hash(&node.key));
+            hashes.push(public_key_hash(&PublicKeyBinary::from(node.key.as_slice())));
         }
-        for edge in &descriptor.edges.edges {
-            let source = &descriptor.edges.keys[edge.source as usize];
-            let target = &descriptor.edges.keys[edge.target as usize];
-            hashes.push(edge_hash(source, target));
+
+        if let Some(edges) = &descriptor.edges {
+            for edge in &edges.edges {
+                let source = PublicKeyBinary::from(edges.keys[edge.source as usize].as_slice());
+                let target = PublicKeyBinary::from(edges.keys[edge.target as usize].as_slice());
+                hashes.push(edge_hash(&source, &target));
+            }
         }
         hashes.sort_unstable();
         hashes.dedup();

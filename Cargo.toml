@@ -17,6 +17,7 @@ bincode = "1"
 csv = "1"
 twox-hash = "1"
 xorf = { version = "0", features = ["serde"] }
+prost = "0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rand = "0.8"
@@ -24,3 +25,7 @@ helium-crypto = { version = "0.8.0", features = ["multisig"] }
 anyhow = "1"
 thiserror = "1"
 indexmap = { version = "2", features = ["serde"] }
+flate2 = "1"
+
+[build-dependencies]
+prost-build = "0"

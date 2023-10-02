@@ -3,4 +3,4 @@ manifest.json
 *.bin
 *.key
 public_key.json
-descriptor.json
+descriptor.bin

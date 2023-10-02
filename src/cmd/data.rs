@@ -33,7 +33,7 @@ impl DataCommand {
 #[derive(Debug, clap::Args)]
 pub struct Generate {
     /// The input descriptor file to generate signing bytes for
-    #[arg(default_value = "descriptor.json")]
+    #[arg(default_value = "descriptor.bin")]
     input: PathBuf,
     /// The file to write the resulting signing bytes to
     #[arg(default_value = "data.bin")]
@@ -46,7 +46,7 @@ pub struct Generate {
 impl Generate {
     pub fn run(&self) -> Result<()> {
         let mut data_file = open_output_file(&self.output, false)?;
-        let descriptor = Descriptor::from_json(&self.input)
+        let descriptor = Descriptor::from_path(&self.input)
             .context(format!("reading descriptor {}", self.input.display()))?;
         let filter = Filter::from_descriptor(self.serial, &descriptor)?;
         let signing_bytes = filter.to_signing_bytes()?;

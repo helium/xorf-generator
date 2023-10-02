@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package denylist.descriptor;
+
+message Descriptor {
+  repeated Node nodes = 1;
+  Edges edges = 2;
+}
+
+message Edges {
+  repeated bytes keys = 1;
+  repeated Edge edges = 2;
+}
+
+message Edge {
+  uint32 source = 1;
+  uint32 target = 2;
+  optional string reason = 3;
+}
+
+message Node {
+  bytes key = 1;
+  optional string reason = 2;
+}
