@@ -88,14 +88,14 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
-              ARCH=linux.x86
+              ARCH=linux.x86_64
           elif [ "$RUNNER_OS" == "macOS" ]; then
-              ARCH=macos.x86
+              ARCH=macos.x86_64
           else
               echo "$RUNNER_OS not supported"
               exit 1
           fi
-          echo "NAME=xorf-generator-$(git describe)-${ARCH}" >> $GITHUB_ENV
+          echo "NAME=xorf-generator-${ARCH}" >> $GITHUB_ENV
 
       - name: Build | Package
         shell: bash
