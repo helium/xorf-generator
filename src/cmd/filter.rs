@@ -40,7 +40,7 @@ impl FilterCommand {
 /// Check if a given filter file contains a given public key or edge.
 #[derive(clap::Args, Debug)]
 pub struct Contains {
-    /// The input file to generate a filter for
+    /// The filter to check for membership
     #[arg(long, short, default_value = "filter.bin")]
     input: PathBuf,
     /// The public key to check

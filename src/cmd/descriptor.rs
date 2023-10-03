@@ -1,5 +1,6 @@
-use crate::cmd::open_output_file;
+use crate::cmd::{open_output_file, print_json};
 use anyhow::{Context, Result};
+use helium_crypto::PublicKey;
 use std::path::PathBuf;
 use xorf_generator::Descriptor;
 
@@ -20,6 +21,7 @@ impl Cmd {
 pub enum DescriptorCommand {
     Generate(Generate),
     CountEdges(CountEdges),
+    Find(Contains),
 }
 
 impl DescriptorCommand {
@@ -27,6 +29,7 @@ impl DescriptorCommand {
         match self {
             Self::Generate(cmd) => cmd.run(),
             Self::CountEdges(cmd) => cmd.run(),
+            Self::Find(cmd) => cmd.run(),
         }
     }
 }
@@ -71,5 +74,37 @@ impl CountEdges {
         let file = open_output_file(&self.output, false)?;
         serde_json::to_writer_pretty(file, &counts)?;
         Ok(())
+    }
+}
+
+/// Check if a given descriptor file contains a given public key or edge.
+#[derive(clap::Args, Debug)]
+pub struct Contains {
+    /// The descriptor file to check for membership
+    #[arg(long, short, default_value = "descriptor.bin")]
+    input: PathBuf,
+    /// The public key to check
+    key: PublicKey,
+    /// The publc key of the target of an edge to check
+    target: Option<PublicKey>,
+}
+
+impl Contains {
+    pub fn run(&self) -> Result<()> {
+        let descriptor = Descriptor::from_path(&self.input)
+            .context(format!("reading descriptor {}", self.input.display()))?;
+        let source = self.key.clone().into();
+        let json = if let Some(target) = self.target.clone() {
+            let edge = descriptor
+                .find_edge(&source, &target.into())
+                .ok_or_else(|| anyhow::anyhow!("edge not found"))?;
+            serde_json::to_value(edge)?
+        } else {
+            let node = descriptor
+                .find_node(&source)
+                .ok_or_else(|| anyhow::anyhow!("node not found"))?;
+            serde_json::to_value(node)?
+        };
+        print_json(&json)
     }
 }
