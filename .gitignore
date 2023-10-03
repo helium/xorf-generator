@@ -2,5 +2,5 @@
 manifest.json
 *.bin
 *.key
-public_key.json
-descriptor.bin
+*.json
+*.bin

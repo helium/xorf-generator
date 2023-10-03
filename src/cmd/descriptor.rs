@@ -1,6 +1,6 @@
 use crate::cmd::open_output_file;
 use anyhow::{Context, Result};
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 use xorf_generator::Descriptor;
 
 #[derive(clap::Args, Debug)]
@@ -50,13 +50,16 @@ impl Generate {
     }
 }
 
+/// Generate a json file with the number of edges per public key in a descriptor
+///
+/// A full hotspot is listed with edge count -1
 #[derive(Debug, clap::Args)]
 pub struct CountEdges {
     /// The input descriptor file to generate signing bytes for
     #[arg(default_value = "descriptor.bin")]
     input: PathBuf,
-    /// The file to write the resulting edgecounts to
-    #[arg(default_value = "edgecount.json")]
+    /// The file to write the resulting edge counts to
+    #[arg(default_value = "edge_counts.json")]
     output: PathBuf,
 }
 
@@ -64,25 +67,7 @@ impl CountEdges {
     pub fn run(&self) -> Result<()> {
         let descriptor = Descriptor::from_path(&self.input)
             .context(format!("reading descriptor {}", self.input.display()))?;
-        let mut counts: HashMap<&Vec<u8>, i32> = HashMap::new();
-        for node in &descriptor.nodes {
-            counts.insert(&node.key, -1); // -1 denotes all edges
-        }
-        if let Some(edges) = &descriptor.edges {
-            for edge in &edges.edges {
-                let source = &edges.keys[edge.source as usize];
-                let target = &edges.keys[edge.target as usize];
-                counts
-                    .entry(source)
-                    .and_modify(|counter| *counter += 1)
-                    .or_insert(1);
-                counts
-                    .entry(target)
-                    .and_modify(|counter| *counter += 1)
-                    .or_insert(1);
-            }
-        }
-
+        let counts = descriptor.edge_counts();
         let file = open_output_file(&self.output, false)?;
         serde_json::to_writer_pretty(file, &counts)?;
         Ok(())

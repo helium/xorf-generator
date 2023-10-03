@@ -3,7 +3,7 @@ use helium_crypto::PublicKeyBinary;
 use indexmap::IndexSet;
 use prost::Message;
 use serde::{Deserialize, Serialize};
-use std::{fs::File, path::Path};
+use std::{collections::HashMap, fs::File, path::Path};
 
 include!(concat!(env!("OUT_DIR"), "/denylist.descriptor.rs"));
 
@@ -112,6 +112,31 @@ impl Descriptor {
         let mut file = flate2::write::GzEncoder::new(writer, flate2::Compression::best());
         file.write_all(&self.encode_to_vec())?;
         Ok(())
+    }
+
+    pub fn edge_counts(&self) -> HashMap<PublicKeyBinary, i32> {
+        let mut counts: HashMap<PublicKeyBinary, i32> = HashMap::new();
+        for node in &self.nodes {
+            let key = PublicKeyBinary::from(node.key.as_slice());
+            counts.insert(key, -1); // -1 denotes all edges
+        }
+        if let Some(edges) = &self.edges {
+            for edge in &edges.edges {
+                let src = edges.keys[edge.source as usize].as_slice();
+                let dst = edges.keys[edge.target as usize].as_slice();
+                let source = PublicKeyBinary::from(src);
+                let target = PublicKeyBinary::from(dst);
+                counts
+                    .entry(source)
+                    .and_modify(|counter| *counter += 1)
+                    .or_insert(1);
+                counts
+                    .entry(target)
+                    .and_modify(|counter| *counter += 1)
+                    .or_insert(1);
+            }
+        }
+        counts
     }
 
     pub fn from_csv(path: &Path) -> Result<Self> {
