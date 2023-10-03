@@ -1,7 +1,6 @@
 use crate::cmd::open_output_file;
 use anyhow::{Context, Result};
-use helium_crypto::PublicKeyBinary;
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 use xorf_generator::Descriptor;
 
 #[derive(clap::Args, Debug)]
@@ -38,7 +37,7 @@ pub struct Generate {
     /// The input csv file to generate a descriptor for
     input: PathBuf,
     /// The file to write the resulting descriptor file to
-    #[arg(default_value = "descriptor.json")]
+    #[arg(default_value = "descriptor.bin")]
     output: PathBuf,
 }
 
@@ -46,43 +45,29 @@ impl Generate {
     pub fn run(&self) -> Result<()> {
         let descriptor = Descriptor::from_csv(&self.input)
             .context(format!("reading descriptor {}", self.input.display()))?;
-        let file = open_output_file(&self.output, false)?;
-        serde_json::to_writer(file, &descriptor)?;
+        descriptor.to_path(open_output_file(&self.output, false)?)?;
         Ok(())
     }
 }
 
+/// Generate a json file with the number of edges per public key in a descriptor
+///
+/// A full hotspot is listed with edge count -1
 #[derive(Debug, clap::Args)]
 pub struct CountEdges {
     /// The input descriptor file to generate signing bytes for
-    #[arg(default_value = "descriptor.json")]
+    #[arg(default_value = "descriptor.bin")]
     input: PathBuf,
-    /// The file to write the resulting edgecounts to
-    #[arg(default_value = "edgecount.json")]
+    /// The file to write the resulting edge counts to
+    #[arg(default_value = "edge_counts.json")]
     output: PathBuf,
 }
 
 impl CountEdges {
     pub fn run(&self) -> Result<()> {
-        let descriptor = Descriptor::from_json(&self.input)
+        let descriptor = Descriptor::from_path(&self.input)
             .context(format!("reading descriptor {}", self.input.display()))?;
-        let mut counts: HashMap<&PublicKeyBinary, i32> = HashMap::new();
-        for node in &descriptor.nodes {
-            counts.insert(&node.key, -1); // -1 denotes all edges
-        }
-        for edge in &descriptor.edges.edges {
-            let source = &descriptor.edges.keys[edge.source as usize];
-            let target = &descriptor.edges.keys[edge.target as usize];
-            counts
-                .entry(source)
-                .and_modify(|counter| *counter += 1)
-                .or_insert(1);
-            counts
-                .entry(target)
-                .and_modify(|counter| *counter += 1)
-                .or_insert(1);
-        }
-
+        let counts = descriptor.edge_counts();
         let file = open_output_file(&self.output, false)?;
         serde_json::to_writer_pretty(file, &counts)?;
         Ok(())

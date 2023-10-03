@@ -10,6 +10,8 @@ pub enum Error {
     Json(#[from] serde_json::Error),
     #[error("csv decode: {0}")]
     Csv(#[from] csv::Error),
+    #[error("proto decode: {0}")]
+    Proto(#[from] prost::DecodeError),
     #[error("base64 decode: {0}")]
     Base64(#[from] base64::DecodeError),
     #[error("crypto: {0}")]
