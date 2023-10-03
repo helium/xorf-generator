@@ -15,10 +15,10 @@ message Edges {
 message Edge {
   uint32 source = 1;
   uint32 target = 2;
-  optional string reason = 3;
+  string reason = 3;
 }
 
 message Node {
   bytes key = 1;
-  optional string reason = 2;
+  string reason = 2;
 }

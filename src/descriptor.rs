@@ -51,7 +51,7 @@ impl From<FullNode> for Node {
     fn from(node: FullNode) -> Self {
         Self {
             key: node.key.into(),
-            reason: node.reason,
+            reason: node.reason.unwrap_or_default(),
         }
     }
 }
@@ -182,7 +182,7 @@ impl Descriptor {
                 Edge {
                     source,
                     target,
-                    reason: node.reason,
+                    reason: node.reason.unwrap_or_default(),
                 }
             })
             .collect();
