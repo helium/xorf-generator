@@ -7,9 +7,6 @@ use std::{collections::HashMap, fs::File, path::Path};
 
 include!(concat!(env!("OUT_DIR"), "/denylist.descriptor.rs"));
 
-//
-// Private
-//
 #[derive(Debug, Deserialize)]
 struct CsvRow {
     pub public_key: PublicKeyBinary,
@@ -18,7 +15,7 @@ struct CsvRow {
 }
 
 #[derive(Debug, Deserialize, Serialize, Eq)]
-struct FullNode {
+pub struct FullNode {
     pub key: PublicKeyBinary,
     pub reason: Option<String>,
 }
@@ -56,8 +53,17 @@ impl From<FullNode> for Node {
     }
 }
 
+impl From<Node> for FullNode {
+    fn from(node: Node) -> Self {
+        Self {
+            key: node.key.into(),
+            reason: Some(node.reason),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, Eq)]
-struct EdgeNode {
+pub struct EdgeNode {
     source: PublicKeyBinary,
     target: PublicKeyBinary,
     reason: Option<String>,
@@ -194,5 +200,45 @@ impl Descriptor {
                 edges,
             }),
         })
+    }
+
+    pub fn find_node(&self, key: &PublicKeyBinary) -> Option<FullNode> {
+        self.nodes
+            .iter()
+            .find(|node| node.key.as_slice() == key.as_ref())
+            .cloned()
+            .map(Into::into)
+    }
+
+    pub fn find_edge(
+        &self,
+        source: &PublicKeyBinary,
+        target: &PublicKeyBinary,
+    ) -> Option<EdgeNode> {
+        if let Some(edges) = &self.edges {
+            let (source, target) = edge_order(source, target);
+            let source_index = edges
+                .keys
+                .iter()
+                .position(|key| key.as_slice() == source.as_ref());
+            let target_index = edges
+                .keys
+                .iter()
+                .position(|key| key.as_slice() == target.as_ref());
+            if let (Some(source_index), Some(target_index)) = (source_index, target_index) {
+                edges
+                    .edges
+                    .iter()
+                    .find(|edge| {
+                        edge.source == source_index as u32 && edge.target == target_index as u32
+                    })
+                    .cloned()
+                    .map(|edge| EdgeNode::new(source.clone(), target.clone(), Some(edge.reason)))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 }
