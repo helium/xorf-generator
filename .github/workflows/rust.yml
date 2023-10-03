@@ -105,10 +105,10 @@ jobs:
           cp README.md $NAME/
           cp LICENSE $NAME/
           if [ "$RUNNER_OS" == "Linux" ]; then
-              tar -zcvf $NAME.tar.gz $NAME/
+              tar -zcvf -C $NAME/ $NAME.tar.gz
               sha256sum -b --tag $NAME.tar.gz > $NAME.checksum
           elif [ "$RUNNER_OS" == "macOS" ]; then
-              gtar -zcvf $NAME.tar.gz $NAME/
+              gtar -zcvf -C $NAME/ $NAME.tar.gz 
               shasum -a 256 -b --tag $NAME.tar.gz > $NAME.checksum
           else
               echo "$RUNNER_OS not supported"
