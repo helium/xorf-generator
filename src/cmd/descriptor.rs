@@ -21,7 +21,7 @@ impl Cmd {
 pub enum DescriptorCommand {
     Generate(Generate),
     CountEdges(CountEdges),
-    Find(Contains),
+    Find(Box<Find>),
 }
 
 impl DescriptorCommand {
@@ -79,7 +79,7 @@ impl CountEdges {
 
 /// Check if a given descriptor file contains a given public key or edge.
 #[derive(clap::Args, Debug)]
-pub struct Contains {
+pub struct Find {
     /// The descriptor file to check for membership
     #[arg(long, short, default_value = "descriptor.bin")]
     input: PathBuf,
@@ -89,7 +89,7 @@ pub struct Contains {
     target: Option<PublicKey>,
 }
 
-impl Contains {
+impl Find {
     pub fn run(&self) -> Result<()> {
         let descriptor = Descriptor::from_path(&self.input)
             .context(format!("reading descriptor {}", self.input.display()))?;
