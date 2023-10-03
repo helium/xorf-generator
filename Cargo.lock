@@ -1430,7 +1430,7 @@ dependencies = [
 
 [[package]]
 name = "xorf-generator"
-version = "0.5.9"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "base64",
@@ -1446,7 +1446,7 @@ dependencies = [
  "rand",
  "serde",
  "serde_json",
- "sha2 0.10.8",
+ "sha2 0.9.9",
  "thiserror",
  "twox-hash",
  "xorf",
