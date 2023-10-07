@@ -23,6 +23,7 @@ pub enum DescriptorCommand {
     Generate(Generate),
     CountEdges(CountEdges),
     Find(Box<Find>),
+    Info(Info),
 }
 
 impl DescriptorCommand {
@@ -31,6 +32,7 @@ impl DescriptorCommand {
             Self::Generate(cmd) => cmd.run(),
             Self::CountEdges(cmd) => cmd.run(),
             Self::Find(cmd) => cmd.run(),
+            Self::Info(cmd) => cmd.run(),
         }
     }
 }
@@ -103,6 +105,35 @@ impl Find {
         if !edges.is_empty() {
             json["edges"] = serde_json::to_value(edges)?;
         }
+        print_json(&json)
+    }
+}
+
+/// Print basic information about a descriptor file
+#[derive(clap::Args, Debug)]
+pub struct Info {
+    /// The descriptor file to check for membership
+    #[arg(long, short, default_value = "descriptor.bin")]
+    input: PathBuf,
+}
+
+impl Info {
+    pub fn run(&self) -> Result<()> {
+        let descriptor = Descriptor::from_path(&self.input)
+            .context(format!("reading descriptor {}", self.input.display()))?;
+
+        let node_count = descriptor.nodes.len();
+        let (key_count, edge_count) = descriptor
+            .edges
+            .map(|edges| (edges.keys.len(), edges.edges.len()))
+            .unwrap_or((0, 0));
+        let json = json!({
+            "nodes": node_count,
+            "edges": {
+                "edges": edge_count,
+                "keys": key_count,
+            }
+        });
         print_json(&json)
     }
 }
