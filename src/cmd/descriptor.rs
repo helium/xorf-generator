@@ -1,6 +1,7 @@
 use crate::cmd::{open_output_file, print_json};
 use anyhow::{Context, Result};
-use helium_crypto::PublicKey;
+use helium_crypto::{PublicKey, PublicKeyBinary};
+use serde_json::json;
 use std::path::PathBuf;
 use xorf_generator::Descriptor;
 
@@ -77,7 +78,8 @@ impl CountEdges {
     }
 }
 
-/// Check if a given descriptor file contains a given public key or edge.
+/// Check if a given descriptor file contains a given public key as a full node
+/// or in any of the contained edges
 #[derive(clap::Args, Debug)]
 pub struct Find {
     /// The descriptor file to check for membership
@@ -85,26 +87,22 @@ pub struct Find {
     input: PathBuf,
     /// The public key to check
     key: PublicKey,
-    /// The publc key of the target of an edge to check
-    target: Option<PublicKey>,
 }
 
 impl Find {
     pub fn run(&self) -> Result<()> {
         let descriptor = Descriptor::from_path(&self.input)
             .context(format!("reading descriptor {}", self.input.display()))?;
-        let source = self.key.clone().into();
-        let json = if let Some(target) = self.target.clone() {
-            let edge = descriptor
-                .find_edge(&source, &target.into())
-                .ok_or_else(|| anyhow::anyhow!("edge not found"))?;
-            serde_json::to_value(edge)?
-        } else {
-            let node = descriptor
-                .find_node(&source)
-                .ok_or_else(|| anyhow::anyhow!("node not found"))?;
-            serde_json::to_value(node)?
-        };
+
+        let mut json = json!({});
+        let key: PublicKeyBinary = self.key.clone().into();
+        if let Some(node) = descriptor.find_node(&key) {
+            json["node"] = serde_json::to_value(node)?;
+        }
+        let edges = descriptor.find_edges(&key);
+        if !edges.is_empty() {
+            json["edges"] = serde_json::to_value(edges)?;
+        }
         print_json(&json)
     }
 }

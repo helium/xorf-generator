@@ -210,35 +210,38 @@ impl Descriptor {
             .map(Into::into)
     }
 
-    pub fn find_edge(
-        &self,
-        source: &PublicKeyBinary,
-        target: &PublicKeyBinary,
-    ) -> Option<EdgeNode> {
+    pub fn find_edges(&self, key: &PublicKeyBinary) -> Vec<EdgeNode> {
         if let Some(edges) = &self.edges {
-            let (source, target) = edge_order(source, target);
-            let source_index = edges
+            let key_index = edges
                 .keys
                 .iter()
-                .position(|key| key.as_slice() == source.as_ref());
-            let target_index = edges
-                .keys
-                .iter()
-                .position(|key| key.as_slice() == target.as_ref());
-            if let (Some(source_index), Some(target_index)) = (source_index, target_index) {
+                .position(|entry| entry.as_slice() == key.as_ref());
+
+            if let Some(key_index) = key_index {
+                let key_index = key_index as u32;
                 edges
                     .edges
                     .iter()
-                    .find(|edge| {
-                        edge.source == source_index as u32 && edge.target == target_index as u32
+                    .filter_map(|edge| {
+                        if edge.source == key_index || edge.target == key_index {
+                            let source = edges.keys[edge.source as usize].clone().into();
+                            let target = edges.keys[edge.target as usize].clone().into();
+                            let reason = if edge.reason.is_empty() {
+                                None
+                            } else {
+                                Some(edge.reason.clone())
+                            };
+                            Some(EdgeNode::new(source, target, reason))
+                        } else {
+                            None
+                        }
                     })
-                    .cloned()
-                    .map(|edge| EdgeNode::new(source.clone(), target.clone(), Some(edge.reason)))
+                    .collect()
             } else {
-                None
+                vec![]
             }
         } else {
-            None
+            vec![]
         }
     }
 }
