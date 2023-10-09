@@ -69,8 +69,8 @@ $ xorf-generator descriptor generate -i hotspots.csv
 ```
 
 where the `hotspots.csv` is the list of public keys and edges to include in the
-filter. This generates a (large) `descriptor.bin` file with the list of public
-keys and edges.
+filter. This generates a (large) `descriptor.bin.gz` file with the list of
+public keys and edges.
 
 ### Generate Signing Data
 
@@ -80,7 +80,8 @@ The signing data is the data that is signed by each member of the multisig and u
 $ xorf-generator data generate --serial 1
 ```
 
-Generates a `data.bin` file from the (implied) `descriptor.bin` file with a given embedded serial number.
+Generates a `data.bin` file from the (implied) `descriptor.bin.gz` file with a
+given embedded serial number.
 
 ### Generate a Manifest
 
@@ -90,7 +91,7 @@ Generate a manifest for signing data and serial number:
 $ xorf-generator manifest generate -f
 ```
 
-which takes `descriptor.bin` and a serial number for the final filter. data.
+which takes `descriptor.bin.gz` and a serial number for the final filter. data.
 This will generate a `manifest.json` file with the hash of the signing data, the
 serial number and a signature array entry where multisig members will add
 signatures to. The `-f` option force overwrites an existing manifest output
