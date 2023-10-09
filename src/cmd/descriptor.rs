@@ -43,7 +43,7 @@ pub struct Generate {
     /// The input csv file to generate a descriptor for
     input: PathBuf,
     /// The file to write the resulting descriptor file to
-    #[arg(default_value = "descriptor.bin")]
+    #[arg(default_value = "descriptor.bin.gz")]
     output: PathBuf,
 }
 
@@ -62,7 +62,7 @@ impl Generate {
 #[derive(Debug, clap::Args)]
 pub struct CountEdges {
     /// The input descriptor file to generate signing bytes for
-    #[arg(default_value = "descriptor.bin")]
+    #[arg(default_value = "descriptor.bin.gz")]
     input: PathBuf,
     /// The file to write the resulting edge counts to
     #[arg(default_value = "edge_counts.json")]
@@ -85,7 +85,7 @@ impl CountEdges {
 #[derive(clap::Args, Debug)]
 pub struct Find {
     /// The descriptor file to check for membership
-    #[arg(long, short, default_value = "descriptor.bin")]
+    #[arg(long, short, default_value = "descriptor.bin.gz")]
     input: PathBuf,
     /// The public key to check
     key: PublicKey,
@@ -113,7 +113,7 @@ impl Find {
 #[derive(clap::Args, Debug)]
 pub struct Info {
     /// The descriptor file to check for membership
-    #[arg(long, short, default_value = "descriptor.bin")]
+    #[arg(long, short, default_value = "descriptor.bin.gz")]
     input: PathBuf,
 }
 

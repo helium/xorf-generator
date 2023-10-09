@@ -33,7 +33,7 @@ impl DataCommand {
 #[derive(Debug, clap::Args)]
 pub struct Generate {
     /// The input descriptor file to generate signing bytes for
-    #[arg(default_value = "descriptor.bin")]
+    #[arg(default_value = "descriptor.bin.gz")]
     input: PathBuf,
     /// The file to write the resulting signing bytes to
     #[arg(default_value = "data.bin")]
