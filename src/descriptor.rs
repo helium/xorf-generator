@@ -18,6 +18,7 @@ struct CsvRow {
 pub struct FullNode {
     pub key: PublicKeyBinary,
     pub reason: Option<String>,
+    pub carryover: u32,
 }
 
 impl PartialEq for FullNode {
@@ -49,6 +50,7 @@ impl From<FullNode> for Node {
         Self {
             key: node.key.into(),
             reason: node.reason.unwrap_or_default(),
+            carryover: node.carryover,
         }
     }
 }
@@ -58,6 +60,7 @@ impl From<Node> for FullNode {
         Self {
             key: node.key.into(),
             reason: Some(node.reason),
+            carryover: node.carryover,
         }
     }
 }
@@ -67,6 +70,7 @@ pub struct EdgeNode {
     source: PublicKeyBinary,
     target: PublicKeyBinary,
     reason: Option<String>,
+    carryover: u32,
 }
 
 impl std::hash::Hash for EdgeNode {
@@ -95,11 +99,17 @@ impl Ord for EdgeNode {
 }
 
 impl EdgeNode {
-    pub fn new(source: PublicKeyBinary, target: PublicKeyBinary, reason: Option<String>) -> Self {
+    pub fn new(
+        source: PublicKeyBinary,
+        target: PublicKeyBinary,
+        reason: Option<String>,
+        carryover: u32,
+    ) -> Self {
         Self {
             source,
             target,
             reason,
+            carryover,
         }
     }
 }
@@ -158,13 +168,15 @@ impl Descriptor {
             if let Some(target_key) = row.target_key {
                 // we enforce edge order here to dedupe two way edges.
                 let (source, target) = edge_order(&row.public_key, &target_key);
-                let edge = EdgeNode::new(source.clone(), target.clone(), row.reason);
+                let edge = EdgeNode::new(source.clone(), target.clone(), row.reason, 0);
                 if !(full_nodes.contains(&FullNode {
                     key: edge.source.clone(),
                     reason: None,
+                    carryover: 0,
                 }) || full_nodes.contains(&FullNode {
                     key: edge.target.clone(),
                     reason: None,
+                    carryover: edge.carryover,
                 })) {
                     edge_keys.insert(edge.source.clone());
                     edge_keys.insert(edge.target.clone());
@@ -174,6 +186,7 @@ impl Descriptor {
                 full_nodes.insert(FullNode {
                     key: row.public_key,
                     reason: row.reason,
+                    carryover: 0,
                 });
             }
         }
@@ -189,6 +202,7 @@ impl Descriptor {
                     source,
                     target,
                     reason: node.reason.unwrap_or_default(),
+                    carryover: node.carryover,
                 }
             })
             .collect();
@@ -231,7 +245,7 @@ impl Descriptor {
                             } else {
                                 Some(edge.reason.clone())
                             };
-                            Some(EdgeNode::new(source, target, reason))
+                            Some(EdgeNode::new(source, target, reason, edge.carryover))
                         } else {
                             None
                         }
