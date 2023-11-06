@@ -176,7 +176,7 @@ impl Descriptor {
                 }) || full_nodes.contains(&FullNode {
                     key: edge.target.clone(),
                     reason: None,
-                    carryover: edge.carryover,
+                    carryover: 0,
                 })) {
                     edge_keys.insert(edge.source.clone());
                     edge_keys.insert(edge.target.clone());
