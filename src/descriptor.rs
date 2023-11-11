@@ -169,7 +169,12 @@ impl Descriptor {
             if let Some(target_key) = row.target_key {
                 // we enforce edge order here to dedupe two way edges.
                 let (source, target) = edge_order(&row.public_key, &target_key);
-                let edge = EdgeNode::new(source.clone(), target.clone(), row.reason, row.carryover.unwrap_or(0));
+                let edge = EdgeNode::new(
+                    source.clone(),
+                    target.clone(),
+                    row.reason,
+                    row.carryover.unwrap_or(0),
+                );
                 if !(full_nodes.contains(&FullNode {
                     key: edge.source.clone(),
                     reason: None,
