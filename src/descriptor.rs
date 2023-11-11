@@ -12,6 +12,7 @@ struct CsvRow {
     pub public_key: PublicKeyBinary,
     pub target_key: Option<PublicKeyBinary>,
     pub reason: Option<String>,
+    pub carryover: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Eq)]
@@ -168,15 +169,15 @@ impl Descriptor {
             if let Some(target_key) = row.target_key {
                 // we enforce edge order here to dedupe two way edges.
                 let (source, target) = edge_order(&row.public_key, &target_key);
-                let edge = EdgeNode::new(source.clone(), target.clone(), row.reason, 0);
+                let edge = EdgeNode::new(source.clone(), target.clone(), row.reason, row.carryover.unwrap_or(0));
                 if !(full_nodes.contains(&FullNode {
                     key: edge.source.clone(),
                     reason: None,
-                    carryover: 0,
+                    carryover: row.carryover.unwrap_or(0),
                 }) || full_nodes.contains(&FullNode {
                     key: edge.target.clone(),
                     reason: None,
-                    carryover: 0,
+                    carryover: row.carryover.unwrap_or(0),
                 })) {
                     edge_keys.insert(edge.source.clone());
                     edge_keys.insert(edge.target.clone());
@@ -186,7 +187,7 @@ impl Descriptor {
                 full_nodes.insert(FullNode {
                     key: row.public_key,
                     reason: row.reason,
-                    carryover: 0,
+                    carryover: row.carryover.unwrap_or(0),
                 });
             }
         }
