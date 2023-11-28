@@ -16,9 +16,11 @@ message Edge {
   uint32 source = 1;
   uint32 target = 2;
   string reason = 3;
+  uint32 carryover = 4;
 }
 
 message Node {
   bytes key = 1;
   string reason = 2;
+  uint32 carryover = 3;
 }
